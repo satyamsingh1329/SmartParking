@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gatekeeper Terminal & Access Barrier | ParkPulse</title>
+  <meta name="description" content="Operational barrier terminal for booking verification, check-in, overstay tracking, and exit billing.">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/index.html" class="brand-logo">
+        <div class="brand-icon">🛡️</div>
+        <span class="brand-name">ParkPulse Barrier</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/parking.html" class="nav-link">Find & Reserve</a>
+        <a href="/dashboard.html" class="nav-link">My Dashboard</a>
+        <a href="/gatekeeper.html" class="nav-link active">Gatekeeper</a>
+        <a href="/admin.html" class="nav-link">Admin Console</a>
+      </div>
+
+      <div class="nav-actions">
+        <div class="live-socket-indicator" id="socket-indicator">
+          <div class="pulse-dot" id="socket-pulse-dot"></div>
+          <span id="socket-label">LIVE SYNC</span>
+        </div>
+
+        <button class="theme-toggle-btn" aria-label="Toggle theme">☀️</button>
+        <div id="nav-auth-container"></div>
+      </div>
+    </div>
+  </nav>
+
+  <main style="max-width: 1280px; margin: 2rem auto; padding: 0 1.5rem; flex: 1;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <span class="badge badge-reserved" style="margin-bottom: 0.4rem;">SECURITY & BARRIER OPERATIONS</span>
+        <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px;">Gatekeeper Control Terminal</h1>
+        <p style="color: var(--text-secondary); font-size: 0.92rem;">Scan digital passes, verify booking holds, and manage entry/exit checkpoints.</p>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem;">
+        <button class="btn btn-cyan" id="btn-mock-scan-qr">📷 Scan Digital QR Pass</button>
+      </div>
+    </div>
+
+    <!-- Booking Lookup Card -->
+    <div class="glass-card" style="margin-bottom: 2.5rem; padding: 1.75rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem;">Manual Permit Search & Optical Verification</h2>
+      
+      <form id="gatekeeper-search-form" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <input type="text" id="input-booking-lookup" class="form-control" placeholder="Enter Booking ID (e.g. PP-2026-DEMO01)" style="flex: 1; min-width: 280px; font-family: 'JetBrains Mono', monospace; font-weight: 700; text-transform: uppercase;">
+        <button type="submit" class="btn btn-primary" style="padding: 0 1.75rem;">Lookup Pass</button>
+      </form>
+
+      <!-- Verification Result Box -->
+      <div id="verification-result-box" style="margin-top: 1.5rem; display: none;"></div>
+    </div>
+
+    <!-- Active Parked Vehicles List -->
+    <section>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 800;">
+          Currently Parked Vehicles 
+          <span class="badge badge-occupied" id="active-vehicles-count" style="margin-left: 0.5rem;">0</span>
+        </h2>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Real-time telemetry synced with ultrasonic bay sensors</span>
+      </div>
+
+      <div class="glass-card" style="padding: 0; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
+              <th style="padding: 1rem 0.75rem;">Booking Pass</th>
+              <th style="padding: 1rem 0.75rem;">Plate Number</th>
+              <th style="padding: 1rem 0.75rem;">Assigned Bay</th>
+              <th style="padding: 1rem 0.75rem;">Entry Timestamp</th>
+              <th style="padding: 1rem 0.75rem;">Duration Parked</th>
+              <th style="padding: 1rem 0.75rem;">Status</th>
+              <th style="padding: 1rem 0.75rem;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="gatekeeper-active-tbody">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Mock QR Scanner Modal -->
+  <div class="modal-overlay" id="qr-scanner-modal">
+    <div class="modal-content" style="text-align: center;">
+      <div class="modal-header">
+        <h3 class="modal-title">Optical Barrier QR Scanner</h3>
+        <button class="modal-close-btn" id="close-scanner-modal">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 2.5rem 1.5rem;">
+        <div style="width: 220px; height: 220px; margin: 0 auto 1.5rem auto; border: 2px dashed var(--primary); border-radius: var(--radius-md); position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4);">
+          <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--primary); box-shadow: 0 0 10px var(--primary); animation: scanLine 1.5s infinite alternate;"></div>
+          <span style="font-size: 3rem;">📷</span>
+        </div>
+        <p style="font-size: 0.95rem; font-weight: 600;">Scanning Digital Pass...</p>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">Align QR code within the viewfinder frame.</p>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes scanLine {
+      from { top: 10px; }
+      to { top: 200px; }
+    }
+  </style>
+
+  <!-- Digital Receipt Modal -->
+  <div class="modal-overlay" id="receipt-modal">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Official Parking Checkout Receipt</h3>
+        <button class="modal-close-btn" id="close-receipt-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem;">
+          <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary);">PARKPULSE SMART PARKING</h2>
+          <p style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase;">Automated Billing Permitted</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem;">
+          <div class="quote-row"><span>Pass ID</span><strong id="receipt-booking-id">--</strong></div>
+          <div class="quote-row"><span>Bay</span><strong id="receipt-slot-number">--</strong></div>
+          <div class="quote-row"><span>Vehicle</span><strong id="receipt-vehicle-number">--</strong></div>
+          <div class="quote-row"><span>Total Duration</span><span id="receipt-duration">--</span></div>
+          <div class="quote-row"><span>Base Parking Charge</span><span id="receipt-base-amount">--</span></div>
+          <div class="quote-row" style="color: #ff6b6b;"><span>Overstay Penalties</span><span id="receipt-overstay-fee">₹0</span></div>
+          <div class="quote-row total" style="margin-top: 0.75rem;">
+            <span>Total Collected</span>
+            <span style="color: var(--primary); font-size: 1.4rem;" id="receipt-total-amount">--</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-print-receipt">🖨️ Print Receipt</button>
+        <button class="btn btn-primary" onclick="document.getElementById('close-receipt-modal').click()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initTheme } from '/js/utils.js';
+    import { renderNavAuth } from '/js/auth.js';
+    import { initSocketClient } from '/js/socket.js';
+    import { initGatekeeper } from '/js/gatekeeper.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTheme();
+      renderNavAuth();
+      initSocketClient();
+      await initGatekeeper();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+<svg width="600" height="400" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradHosp" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0b0f19;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#450a0a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="600" height="400" fill="url(#gradHosp)" />
+  <rect x="50" y="50" width="500" height="300" rx="20" fill="#111827" stroke="#ef4444" stroke-width="2" />
+  <text x="300" y="160" font-family="system-ui, sans-serif" font-size="48" font-weight="bold" fill="#ffffff" text-anchor="middle">🏥</text>
+  <text x="300" y="220" font-family="system-ui, sans-serif" font-size="24" font-weight="bold" fill="#ef4444" text-anchor="middle">City Hospital Priority Hub</text>
+  <text x="300" y="255" font-family="system-ui, sans-serif" font-size="14" fill="#94a3b8" text-anchor="middle">Emergency Accessible & 24/7 Priority Bays</text>
+</svg>

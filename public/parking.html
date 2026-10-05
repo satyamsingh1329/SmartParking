@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Parking Map & Space Allocation | ParkPulse</title>
+  <meta name="description" content="Interactive 2D real-time multi-floor parking map with intelligent bay recommendations, dynamic surge pricing, and instant reservation.">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/index.html" class="brand-logo">
+        <div class="brand-icon">🚗</div>
+        <span class="brand-name">ParkPulse</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/parking.html" class="nav-link active">Find & Reserve</a>
+        <a href="/dashboard.html" class="nav-link">My Dashboard</a>
+        <a href="/gatekeeper.html" class="nav-link">Gatekeeper</a>
+        <a href="/admin.html" class="nav-link">Admin Console</a>
+      </div>
+
+      <div class="nav-actions">
+        <div class="live-socket-indicator" id="socket-indicator">
+          <div class="pulse-dot" id="socket-pulse-dot"></div>
+          <span id="socket-label">LIVE SYNC</span>
+        </div>
+
+        <button class="theme-toggle-btn" aria-label="Toggle theme">☀️</button>
+        <div id="nav-auth-container"></div>
+      </div>
+    </div>
+  </nav>
+
+  <main style="max-width: 1380px; margin: 0 auto; padding: 2rem 1.5rem; flex: 1;">
+    
+    <!-- Facility Selector & Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 2rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+          <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.5px;" id="selected-location-name">Loading Facility...</h1>
+          <span class="badge badge-available" id="congestion-badge">● LOW CONGESTION</span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;" id="selected-location-address">Connecting to sensor network...</p>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div style="min-width: 260px;">
+          <label class="form-label" style="margin-bottom: 0.25rem;">Switch Facility</label>
+          <select id="location-selector" class="form-control" style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"></select>
+        </div>
+        <div>
+          <label class="form-label" style="visibility: hidden; margin-bottom: 0.25rem;">Action</label>
+          <button id="btn-smart-recommend" class="btn btn-cyan" style="box-shadow: 0 0 15px var(--cyan-glow);">
+            ⚡ Find My Best Slot
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Strip -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+      <div class="glass-card" style="padding: 1rem 1.25rem;">
+        <span class="stat-label">Capacity</span>
+        <div class="stat-value" id="stat-total" style="font-size: 1.5rem;">--</div>
+      </div>
+      <div class="glass-card" style="padding: 1rem 1.25rem; border-color: rgba(16, 185, 129, 0.3);">
+        <span class="stat-label" style="color: var(--primary);">Available</span>
+        <div class="stat-value" id="stat-available" style="color: var(--primary); font-size: 1.5rem;">--</div>
+      </div>
+      <div class="glass-card" style="padding: 1rem 1.25rem; border-color: rgba(239, 68, 68, 0.3);">
+        <span class="stat-label" style="color: var(--crimson);">Occupied</span>
+        <div class="stat-value" id="stat-occupied" style="color: var(--crimson); font-size: 1.5rem;">--</div>
+      </div>
+      <div class="glass-card" style="padding: 1rem 1.25rem; border-color: rgba(245, 158, 11, 0.3);">
+        <span class="stat-label" style="color: var(--amber);">Reserved</span>
+        <div class="stat-value" id="stat-reserved" style="color: var(--amber); font-size: 1.5rem;">--</div>
+      </div>
+      <div class="glass-card" style="padding: 1rem 1.25rem;">
+        <span class="stat-label">Occupancy Rate</span>
+        <div class="stat-value" id="stat-occupancy-rate" style="font-size: 1.5rem;">--%</div>
+      </div>
+    </div>
+
+    <!-- Multi-Floor & Filter Control Toolbar -->
+    <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1.75rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        
+        <!-- Floor Tabs -->
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary btn-sm floor-tab-btn active" data-floor="1">Level 1 (Cars & EV)</button>
+          <button class="btn btn-secondary btn-sm floor-tab-btn" data-floor="2">Level 2 (Bikes & VIP)</button>
+          <button class="btn btn-secondary btn-sm floor-tab-btn" data-floor="3">Level 3 (Corporate & EV)</button>
+        </div>
+
+        <!-- Filter Controls -->
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+          <div>
+            <select id="filter-zone" class="form-control" style="padding: 0.4rem 0.75rem; font-size: 0.85rem;">
+              <option value="">All Zones</option>
+              <option value="A">Zone A</option>
+              <option value="B">Zone B</option>
+              <option value="C">Zone C</option>
+              <option value="D">Zone D</option>
+            </select>
+          </div>
+
+          <div>
+            <select id="filter-vehicle" class="form-control" style="padding: 0.4rem 0.75rem; font-size: 0.85rem;">
+              <option value="">All Vehicles</option>
+              <option value="car">🚗 Cars</option>
+              <option value="bike">🏍️ Two-Wheelers</option>
+              <option value="ev">⚡ Electric Vehicles</option>
+            </select>
+          </div>
+
+          <div>
+            <select id="filter-type" class="form-control" style="padding: 0.4rem 0.75rem; font-size: 0.85rem;">
+              <option value="">All Slot Types</option>
+              <option value="standard">Standard</option>
+              <option value="ev">⚡ EV Fast Charge</option>
+              <option value="vip">⭐ VIP Bay</option>
+              <option value="accessible">♿ Accessible / PWD</option>
+            </select>
+          </div>
+
+          <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 500; cursor: pointer; user-select: none;">
+            <input type="checkbox" id="filter-available-only" style="accent-color: var(--primary); width: 16px; height: 16px;">
+            <span>Available Only</span>
+          </label>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 2D Interactive Parking Floor Map -->
+    <div class="parking-map-container">
+      
+      <!-- Gate Marker -->
+      <div class="map-gate-indicator">
+        <span>↓ MAIN AUTOMATED ENTRY / EXIT GATE ↓</span>
+      </div>
+
+      <!-- Driveway Lane 1 -->
+      <div class="driveway-lane">
+        <span>◀ ◀ ◀ DRIVEWAY LANE A (SPEED LIMIT 10 KM/H) ◀ ◀ ◀</span>
+      </div>
+
+      <!-- Slots Grid -->
+      <div class="slots-grid" id="parking-slots-grid">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Driveway Lane 2 -->
+      <div class="driveway-lane" style="margin-top: 2rem;">
+        <span>▶ ▶ ▶ DRIVEWAY LANE B (SPEED LIMIT 10 KM/H) ▶ ▶ ▶</span>
+      </div>
+
+      <!-- Legend -->
+      <div style="display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.82rem; color: var(--text-secondary);">
+        <div style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 12px; height: 12px; background: #10b981; border-radius: 3px; box-shadow: 0 0 8px #10b981;"></span> Available</div>
+        <div style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 12px; height: 12px; background: #ef4444; border-radius: 3px; box-shadow: 0 0 8px #ef4444;"></span> Occupied</div>
+        <div style="display: flex; align-items: center; gap: 0.4rem;"><span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px; box-shadow: 0 0 8px #f59e0b;"></span> Reserved</div>
+        <div style="display: flex; align-items: center; gap: 0.4rem;"><span>⚡</span> EV Charging</div>
+        <div style="display: flex; align-items: center; gap: 0.4rem;"><span>⭐</span> VIP Bay</div>
+        <div style="display: flex; align-items: center; gap: 0.4rem;"><span>♿</span> Accessible (PWD)</div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Reservation Drawer (Slide-out panel) -->
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <aside class="drawer-panel" id="reservation-drawer">
+    <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <span class="badge badge-available">INSTANT RESERVATION</span>
+        <h2 style="font-size: 1.45rem; font-weight: 800; margin-top: 0.35rem;" id="drawer-slot-number">Slot A-04</h2>
+      </div>
+      <button class="modal-close-btn" id="drawer-close-btn" aria-label="Close drawer">✕</button>
+    </div>
+
+    <div style="padding: 1.5rem; flex: 1; overflow-y: auto;">
+      <!-- Slot Info Matrix -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; background: rgba(0,0,0,0.25); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Location</span>
+          <div style="font-weight: 700;" id="drawer-slot-location">Floor 1 • Zone A</div>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Bay Category</span>
+          <div style="font-weight: 700;" id="drawer-slot-type">Standard Car</div>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Proximity</span>
+          <div style="font-weight: 700;" id="drawer-slot-distance">42m from gate</div>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Base Rate</span>
+          <div style="font-weight: 700; color: var(--primary);" id="drawer-slot-rate">₹40 / hr</div>
+        </div>
+      </div>
+
+      <!-- Vehicle Type Selection -->
+      <div class="form-group">
+        <label class="form-label">Vehicle Type</label>
+        <select id="drawer-vehicle-type" class="form-control">
+          <option value="car">🚗 Standard Car / Sedan / SUV</option>
+          <option value="bike">🏍️ Motorcycle / Scooter</option>
+          <option value="ev">⚡ Electric Vehicle (EV)</option>
+        </select>
+      </div>
+
+      <!-- Duration Slider -->
+      <div class="form-group">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <label class="form-label" style="margin-bottom: 0;">Parking Duration</label>
+          <span style="font-weight: 800; font-size: 1rem; color: var(--primary);" id="drawer-duration-val">2 Hours</span>
+        </div>
+        <input type="range" id="drawer-duration-slider" min="1" max="8" step="0.5" value="2">
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+          <span>1h</span>
+          <span>2h</span>
+          <span>4h</span>
+          <span>6h</span>
+          <span>8h</span>
+        </div>
+      </div>
+
+      <!-- Live Dynamic Quote Breakdown -->
+      <div class="quote-breakdown-card" id="drawer-quote-details">
+        <div style="text-align: center; color: var(--text-muted); padding: 1rem;">Calculating live quote...</div>
+      </div>
+
+      <div style="padding: 0.75rem; background: rgba(16, 185, 129, 0.08); border: 1px dashed var(--primary); border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+        ⏱️ <strong>15-Minute Auto-Release Window:</strong> Your reserved slot is guaranteed for 15 minutes. Check in at the barrier to start your parking session.
+      </div>
+    </div>
+
+    <div style="padding: 1.25rem 1.5rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
+      <button class="btn btn-primary btn-block btn-lg" id="drawer-confirm-btn">
+        Reserve This Slot
+      </button>
+    </div>
+  </aside>
+
+  <!-- Smart Recommendation Modal -->
+  <div class="modal-overlay" id="recommendation-modal">
+    <div class="modal-content" style="border: 1.5px solid var(--cyan); box-shadow: 0 0 25px var(--cyan-glow);">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.3rem;">⭐</span>
+          <h3 class="modal-title">AI Smart Slot Recommendation</h3>
+        </div>
+        <button class="modal-close-btn" id="close-rec-modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <div style="display: inline-block; padding: 0.5rem 1.25rem; background: rgba(6, 182, 212, 0.15); border: 1px solid var(--cyan); border-radius: var(--radius-full); margin-bottom: 0.75rem;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: var(--cyan);">OPTIMAL MATCH SCORE:</span>
+            <span style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-left: 0.35rem;" id="rec-match-score">94%</span>
+          </div>
+          <h2 style="font-size: 2.2rem; font-weight: 800; font-family: 'JetBrains Mono', monospace;" id="rec-slot-number">A-14</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;" id="rec-floor-zone">Floor 1 • Zone A</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: rgba(0,0,0,0.25); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Distance to Gate</span>
+            <div style="font-weight: 700; font-size: 1.05rem;" id="rec-distance">22m</div>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Base Rate</span>
+            <div style="font-weight: 700; font-size: 1.05rem; color: var(--primary);" id="rec-rate">₹40/hr</div>
+          </div>
+        </div>
+
+        <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--primary); border-radius: var(--radius-sm); margin-bottom: 1rem;">
+          <strong style="color: var(--primary); font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 0.25rem;">Why this slot was recommended:</strong>
+          <p style="font-size: 0.9rem; color: var(--text-secondary);" id="rec-reason">Closest compatible slot with low zone congestion and zero wait time.</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="document.getElementById('close-rec-modal').click()">Cancel</button>
+        <button class="btn btn-cyan" id="rec-reserve-btn">Lock Recommended Bay →</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initTheme } from '/js/utils.js';
+    import { renderNavAuth } from '/js/auth.js';
+    import { initSocketClient } from '/js/socket.js';
+    import { initParkingMap } from '/js/parking.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTheme();
+      renderNavAuth();
+      initSocketClient();
+      await initParkingMap();
+    });
+  </script>
+</body>
+</html>

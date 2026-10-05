@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Parking Pass | ParkPulse</title>
+  <meta name="description" content="Official ParkPulse digital parking pass with secure barcode & QR validation.">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/index.html" class="brand-logo">
+        <div class="brand-icon">🚗</div>
+        <span class="brand-name">ParkPulse</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/parking.html" class="nav-link">Find & Reserve</a>
+        <a href="/dashboard.html" class="nav-link">My Dashboard</a>
+        <a href="/gatekeeper.html" class="nav-link">Gatekeeper</a>
+        <a href="/admin.html" class="nav-link">Admin Console</a>
+      </div>
+
+      <div class="nav-actions">
+        <div class="live-socket-indicator" id="socket-indicator">
+          <div class="pulse-dot" id="socket-pulse-dot"></div>
+          <span id="socket-label">LIVE SYNC</span>
+        </div>
+
+        <button class="theme-toggle-btn" aria-label="Toggle theme">☀️</button>
+        <div id="nav-auth-container"></div>
+      </div>
+    </div>
+  </nav>
+
+  <main style="max-width: 600px; margin: 3rem auto; padding: 0 1.5rem; flex: 1;">
+    
+    <div class="digital-pass-card" id="pass-card">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+        <span style="font-size: 1.5rem;">🚗</span>
+        <h2 style="font-size: 1.25rem; font-weight: 800; letter-spacing: 1px; color: var(--primary);">PARKPULSE PASS</h2>
+      </div>
+      <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Official Automated Smart Parking Permit</p>
+
+      <div style="margin: 1.5rem 0;">
+        <span class="badge badge-available" id="pass-status">CONFIRMED</span>
+        <h1 style="font-size: 1.8rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; margin-top: 0.5rem; letter-spacing: 0.5px;" id="pass-booking-id">PP-2026-XXXX</h1>
+      </div>
+
+      <!-- QR Code Box -->
+      <div class="pass-qr-box" id="pass-qr-container">
+        <!-- Rendered by QRCode.js -->
+      </div>
+
+      <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+        Hold this code against the barrier scanner or present to the gatekeeper on arrival.
+      </p>
+
+      <!-- Details Matrix -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left; background: rgba(0,0,0,0.3); padding: 1.25rem; border-radius: var(--radius-md); font-size: 0.88rem; margin-bottom: 1.75rem;">
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Facility</span>
+          <div style="font-weight: 700;" id="pass-facility">University Campus Central</div>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Assigned Bay</span>
+          <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary);" id="pass-slot">A-14</div>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Vehicle</span>
+          <div style="font-weight: 700; font-family: 'JetBrains Mono', monospace;" id="pass-vehicle">DL01AB1234</div>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Category</span>
+          <div style="font-weight: 700;" id="pass-category">Standard Car</div>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Reserved Start</span>
+          <div style="font-weight: 600;" id="pass-start">10:30 AM</div>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Expected Exit</span>
+          <div style="font-weight: 600;" id="pass-end">01:30 PM</div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <button class="btn btn-secondary" onclick="window.print()">🖨️ Print Pass</button>
+        <a href="/dashboard.html" class="btn btn-primary">My Dashboard →</a>
+      </div>
+    </div>
+
+  </main>
+
+  <script type="module">
+    import { apiRequest, showToast, formatDateTime, formatTimeOnly, initTheme } from '/js/utils.js';
+    import { renderNavAuth } from '/js/auth.js';
+    import { initSocketClient } from '/js/socket.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTheme();
+      renderNavAuth();
+      initSocketClient();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const bookingId = urlParams.get('id');
+
+      if (!bookingId) {
+        showToast('No booking ID specified', 'error');
+        return;
+      }
+
+      try {
+        const res = await apiRequest(`/api/bookings/${bookingId}`);
+        const b = res.data;
+
+        document.getElementById('pass-booking-id').textContent = b.bookingId;
+        document.getElementById('pass-status').textContent = b.status;
+        document.getElementById('pass-facility').textContent = b.locationId?.name || 'ParkPulse Hub';
+        document.getElementById('pass-slot').textContent = `${b.slotId?.slotNumber || 'Assigned'} (Fl ${b.slotId?.floor}, Zn ${b.slotId?.zone})`;
+        document.getElementById('pass-vehicle').textContent = b.vehicleNumber;
+        document.getElementById('pass-category').textContent = b.vehicleType.toUpperCase();
+        document.getElementById('pass-start').textContent = formatDateTime(b.startTime);
+        document.getElementById('pass-end').textContent = formatDateTime(b.expectedEndTime);
+
+        // Render QR
+        const qrContainer = document.getElementById('pass-qr-container');
+        qrContainer.innerHTML = '';
+
+        if (b.qrCodeData && b.qrCodeData.startsWith('data:image')) {
+          const img = document.createElement('img');
+          img.src = b.qrCodeData;
+          img.alt = `QR Code for ${b.bookingId}`;
+          img.style.maxWidth = '200px';
+          qrContainer.appendChild(img);
+        } else if (typeof QRCode !== 'undefined') {
+          new QRCode(qrContainer, {
+            text: JSON.stringify({
+              bookingId: b.bookingId,
+              slot: b.slotId?.slotNumber,
+              vehicle: b.vehicleNumber,
+              platform: 'PARKPULSE'
+            }),
+            width: 200,
+            height: 200,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        }
+      } catch (err) {
+        showToast('Failed to load pass details: ' + err.message, 'error');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Control Center & Analytics | ParkPulse</title>
+  <meta name="description" content="Centralized command center with live IoT sensor simulation, facility analytics, revenue telemetry, and bay management.">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/index.html" class="brand-logo">
+        <div class="brand-icon">⚡</div>
+        <span class="brand-name">ParkPulse Admin</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/parking.html" class="nav-link">Find & Reserve</a>
+        <a href="/dashboard.html" class="nav-link">My Dashboard</a>
+        <a href="/gatekeeper.html" class="nav-link">Gatekeeper</a>
+        <a href="/admin.html" class="nav-link active">Admin Console</a>
+      </div>
+
+      <div class="nav-actions">
+        <div class="live-socket-indicator" id="socket-indicator">
+          <div class="pulse-dot" id="socket-pulse-dot"></div>
+          <span id="socket-label">LIVE SYNC</span>
+        </div>
+
+        <button class="theme-toggle-btn" aria-label="Toggle theme">☀️</button>
+        <div id="nav-auth-container"></div>
+      </div>
+    </div>
+  </nav>
+
+  <main style="max-width: 1380px; margin: 2rem auto; padding: 0 1.5rem; flex: 1;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <span class="badge badge-occupied" style="margin-bottom: 0.4rem;">EXECUTIVE TELEMETRY</span>
+        <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px;">Operations Control Center</h1>
+        <p style="color: var(--text-secondary); font-size: 0.92rem;">Live sensor telemetry, automated bay allocation, and revenue analytics.</p>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="/parking.html" class="btn btn-secondary">Open 2D Live Map →</a>
+      </div>
+    </div>
+
+    <!-- 8 Metric Cards Strip -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+      
+      <div class="glass-card stat-card" style="padding: 1rem 1.25rem;">
+        <div class="stat-content">
+          <span class="stat-label">Total Bays</span>
+          <span class="stat-value" id="metric-total-capacity">--</span>
+        </div>
+      </div>
+
+      <div class="glass-card stat-card" style="padding: 1rem 1.25rem; border-color: rgba(16, 185, 129, 0.3);">
+        <div class="stat-content">
+          <span class="stat-label" style="color: var(--primary);">Available</span>
+          <span class="stat-value" style="color: var(--primary);" id="metric-available">--</span>
+        </div>
+      </div>
+
+      <div class="glass-card stat-card" style="padding: 1rem 1.25rem; border-color: rgba(239, 68, 68, 0.3);">
+        <div class="stat-content">
+          <span class="stat-label" style="color: var(--crimson);">Occupied</span>
+          <span class="stat-value" style="color: var(--crimson);" id="metric-occupied">--</span>
+        </div>
+      </div>
+
+      <div class="glass-card stat-card" style="padding: 1rem 1.25rem; border-color: rgba(245, 158, 11, 0.3);">
+        <div class="stat-content">
+          <span class="stat-label" style="color: var(--amber);">Reserved</span>
+          <span class="stat-value" style="color: var(--amber);" id="metric-reserved">--</span>
+        </div>
+      </div>
+
+      <div class="glass-card stat-card" style="padding: 1rem 1.25rem;">
+        <div class="stat-content">
+          <span class="stat-label">Occupancy Rate</span>
+          <span class="stat-value" id="metric-occupancy-rate">--%</span>
+        </div>
+      </div>
+
+      <div class="glass-card stat-card" style="padding: 1rem 1.25rem;">
+        <div class="stat-content">
+          <span class="stat-label">Active Sessions</span>
+          <span class="stat-value" id="metric-active-sessions">--</span>
+        </div>
+      </div>
+
+      <div class="glass-card stat-card" style="padding: 1rem 1.25rem; border-color: rgba(6, 182, 212, 0.3);">
+        <div class="stat-content">
+          <span class="stat-label" style="color: var(--cyan);">Today's Revenue</span>
+          <span class="stat-value" style="color: var(--cyan);" id="metric-today-revenue">--</span>
+        </div>
+      </div>
+
+      <div class="glass-card stat-card" style="padding: 1rem 1.25rem;">
+        <div class="stat-content">
+          <span class="stat-label">Total Bookings</span>
+          <span class="stat-value" id="metric-total-bookings">--</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Live Real-Time IoT Sensor Simulator Section (Section 36, 37, 66) -->
+    <section class="glass-card" style="margin-bottom: 2.5rem; border: 1.5px solid var(--primary); box-shadow: 0 0 25px var(--primary-glow); padding: 1.75rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="badge badge-available">HARDWARE DEMONSTRATION</span>
+          <h2 style="font-size: 1.4rem; font-weight: 800; margin-top: 0.35rem;">
+            REAL-TIME IoT SIMULATION CONSOLE
+          </h2>
+          <p style="color: var(--text-secondary); font-size: 0.88rem;">
+            Simulate ultrasonic proximity sensor triggers. Events are processed by the server, persisted in MongoDB, and broadcasted to all connected browsers in zero latency.
+          </p>
+        </div>
+
+        <div style="padding: 0.5rem 1rem; background: rgba(0,0,0,0.3); border-radius: var(--radius-md); font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="pulse-dot"></span>
+          <span>Sensor Protocol: <strong>HTTP / WebSocket / MQTT-ready</strong></span>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; align-items: flex-end; background: rgba(0,0,0,0.25); padding: 1.25rem; border-radius: var(--radius-md);">
+        
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Target Parking Bay</label>
+          <select id="sim-slot-select" class="form-control" style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"></select>
+        </div>
+
+        <div style="font-size: 0.88rem;">
+          <span style="color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Ultrasonic Sensor ID</span>
+          <div style="font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--cyan);" id="sim-sensor-id">US-F1-A01</div>
+        </div>
+
+        <div style="font-size: 0.88rem;">
+          <span style="color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Current Sensor Telemetry</span>
+          <div style="font-weight: 800; font-size: 1rem;" id="sim-slot-status">AVAILABLE</div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-danger" id="btn-sim-entry" style="flex: 1;">
+            🔴 Simulate Entry
+          </button>
+          <button class="btn btn-primary" id="btn-sim-exit" style="flex: 1;">
+            🟢 Simulate Exit
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Analytics Charts Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+      
+      <!-- Hourly Occupancy & Peak Hours -->
+      <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+          <h3 style="font-size: 1.15rem; font-weight: 700;">Hourly Occupancy & Peak Hours</h3>
+          <span class="badge badge-available">Best: <span id="best-time-tip">2-4 PM</span></span>
+        </div>
+        <canvas id="chart-occupancy" height="200"></canvas>
+      </div>
+
+      <!-- 7-Day Revenue Trend -->
+      <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+          <h3 style="font-size: 1.15rem; font-weight: 700;">7-Day Revenue Telemetry</h3>
+          <span class="badge badge-surge">SURGE ACTIVE >80%</span>
+        </div>
+        <canvas id="chart-revenue" height="200"></canvas>
+      </div>
+
+      <!-- Zone Distribution -->
+      <div class="glass-card">
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.25rem;">Occupancy by Zone (A/B/C/D)</h3>
+        <canvas id="chart-zones" height="200"></canvas>
+      </div>
+
+      <!-- Slot Type Breakdown -->
+      <div class="glass-card">
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.25rem;">Slot Category Allocation</h3>
+        <canvas id="chart-types" height="200"></canvas>
+      </div>
+
+    </div>
+
+    <!-- Live System Bookings Table -->
+    <section>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="font-size: 1.35rem; font-weight: 800;">Recent Platform Bookings</h2>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Real-time audit log of parking permits</span>
+      </div>
+
+      <div class="glass-card" style="padding: 0; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">
+              <th style="padding: 0.85rem 0.75rem;">Permit ID</th>
+              <th style="padding: 0.85rem 0.75rem;">Customer</th>
+              <th style="padding: 0.85rem 0.75rem;">Bay</th>
+              <th style="padding: 0.85rem 0.75rem;">Plate</th>
+              <th style="padding: 0.85rem 0.75rem;">Created</th>
+              <th style="padding: 0.85rem 0.75rem;">Total</th>
+              <th style="padding: 0.85rem 0.75rem;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="admin-bookings-tbody">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script type="module">
+    import { initTheme } from '/js/utils.js';
+    import { renderNavAuth } from '/js/auth.js';
+    import { initSocketClient } from '/js/socket.js';
+    import { initAdmin } from '/js/admin.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTheme();
+      renderNavAuth();
+      initSocketClient();
+      await initAdmin();
+    });
+  </script>
+</body>
+</html>
