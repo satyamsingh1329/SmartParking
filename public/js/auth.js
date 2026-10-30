@@ -22,6 +22,32 @@ export function isAuthenticated() {
 }
 
 export async function loginUser(email, password) {
+  const isStaticPages = window.location.hostname.endsWith('github.io') && !localStorage.getItem('parkpulse_api_url');
+  if (isStaticPages) {
+    let role = 'USER';
+    let name = 'Demo User';
+    if (email.includes('admin')) {
+      role = 'ADMIN';
+      name = 'System Administrator';
+    } else if (email.includes('gate')) {
+      role = 'GATEKEEPER';
+      name = 'Duty Gate Officer';
+    }
+    const demoUser = {
+      _id: 'demo_user_01',
+      name,
+      email,
+      role,
+      rewardPoints: role === 'ADMIN' ? 500 : 120,
+      phone: '+91 98765 43210'
+    };
+    const demoToken = 'demo_jwt_token_for_github_pages_preview';
+    localStorage.setItem('parkpulse_token', demoToken);
+    localStorage.setItem('parkpulse_user', JSON.stringify(demoUser));
+    showToast(`Signed in as Demo ${role} (Static Preview) 👋`, 'success');
+    return demoUser;
+  }
+
   try {
     const data = await apiRequest('/api/auth/login', {
       method: 'POST',
@@ -62,7 +88,7 @@ export function logoutUser() {
   localStorage.removeItem('parkpulse_user');
   showToast('Logged out successfully', 'info');
   setTimeout(() => {
-    window.location.href = '/index.html';
+    window.location.href = './index.html';
   }, 500);
 }
 
@@ -90,10 +116,10 @@ export function renderNavAuth() {
             <div style="font-size: 0.75rem; color: var(--text-muted);">${user.email}</div>
             <div style="margin-top: 0.35rem;">${pointsBadge}</div>
           </div>
-          <a href="/dashboard.html" class="dropdown-item">📊 My Dashboard</a>
-          <a href="/parking.html" class="dropdown-item">🚗 Find & Reserve Slot</a>
-          ${user.role === 'ADMIN' ? `<a href="/admin.html" class="dropdown-item" style="color: #ef4444; font-weight: 600;">⚡ Admin Console</a>` : ''}
-          ${user.role === 'GATEKEEPER' || user.role === 'ADMIN' ? `<a href="/gatekeeper.html" class="dropdown-item" style="color: #f59e0b; font-weight: 600;">🛡️ Gatekeeper Terminal</a>` : ''}
+          <a href="./dashboard.html" class="dropdown-item">📊 My Dashboard</a>
+          <a href="./parking.html" class="dropdown-item">🚗 Find & Reserve Slot</a>
+          ${user.role === 'ADMIN' ? `<a href="./admin.html" class="dropdown-item" style="color: #ef4444; font-weight: 600;">⚡ Admin Console</a>` : ''}
+          ${user.role === 'GATEKEEPER' || user.role === 'ADMIN' ? `<a href="./gatekeeper.html" class="dropdown-item" style="color: #f59e0b; font-weight: 600;">🛡️ Gatekeeper Terminal</a>` : ''}
           <div class="dropdown-divider"></div>
           <div class="dropdown-item" id="nav-logout-btn" style="color: #ef4444;">🚪 Sign Out</div>
         </div>
@@ -115,8 +141,8 @@ export function renderNavAuth() {
   } else {
     authContainer.innerHTML = `
       <div style="display: flex; gap: 0.5rem;">
-        <a href="/login.html" class="btn btn-secondary btn-sm">Log In</a>
-        <a href="/register.html" class="btn btn-primary btn-sm">Sign Up</a>
+        <a href="./login.html" class="btn btn-secondary btn-sm">Log In</a>
+        <a href="./register.html" class="btn btn-primary btn-sm">Sign Up</a>
       </div>
     `;
   }

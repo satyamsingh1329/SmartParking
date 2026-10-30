@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Operator Control Center & IoT Hub | ParkPulse</title>
   <meta name="description" content="Centralized command center with live IoT sensor telemetry, ANPR gate simulation, EV charging management, and machine learning availability forecasting.">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
@@ -54,18 +54,18 @@
   <!-- Navigation Bar -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="/index.html" class="brand-logo">
+      <a href="./index.html" class="brand-logo">
         <div class="brand-icon">⚡</div>
         <span class="brand-name">ParkPulse Control Center</span>
       </a>
 
       <div class="nav-links">
-        <a href="/index.html" class="nav-link">Home</a>
-        <a href="/parking.html" class="nav-link">Find & Reserve</a>
-        <a href="/dashboard.html" class="nav-link">My Dashboard</a>
-        <a href="/gatekeeper.html" class="nav-link">Gatekeeper</a>
-        <a href="/admin.html" class="nav-link active">Operator Portal</a>
-        <a href="/analytics.html" class="nav-link" style="color: var(--cyan); font-weight: 700;">📊 Analytics BI</a>
+        <a href="./index.html" class="nav-link">Home</a>
+        <a href="./parking.html" class="nav-link">Find & Reserve</a>
+        <a href="./dashboard.html" class="nav-link">My Dashboard</a>
+        <a href="./gatekeeper.html" class="nav-link">Gatekeeper</a>
+        <a href="./admin.html" class="nav-link active">Operator Portal</a>
+        <a href="./analytics.html" class="nav-link" style="color: var(--cyan); font-weight: 700;">📊 Analytics BI</a>
       </div>
 
       <div class="nav-actions">
@@ -103,8 +103,8 @@
       </div>
 
       <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-        <a href="/analytics.html" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.4rem;">📊 Open Analytics BI Center →</a>
-        <a href="/parking.html" class="btn btn-secondary">Open 2D Live Bay Map →</a>
+        <a href="./analytics.html" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.4rem;">📊 Open Analytics BI Center →</a>
+        <a href="./parking.html" class="btn btn-secondary">Open 2D Live Bay Map →</a>
       </div>
     </div>
 
@@ -333,7 +333,7 @@
           <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.3rem;">ParkPulse Analytics — Business Intelligence Platform</h3>
           <p style="color: var(--text-secondary); font-size: 0.88rem; margin: 0;">Multi-dimensional slicing by date range, facility, and vehicle class. Includes Excel practicals, MySQL 8 relational schema, and Tableau dashboards.</p>
         </div>
-        <a href="/analytics.html" class="btn btn-primary" style="white-space: nowrap; font-size: 0.92rem; padding: 0.75rem 1.25rem;">
+        <a href="./analytics.html" class="btn btn-primary" style="white-space: nowrap; font-size: 0.92rem; padding: 0.75rem 1.25rem;">
           🚀 Launch Dedicated BI Center →
         </a>
       </div>
@@ -478,10 +478,10 @@
   </main>
 
   <script type="module">
-    import { initTheme } from '/js/utils.js';
-    import { renderNavAuth } from '/js/auth.js';
-    import { initSocketClient } from '/js/socket.js';
-    import { initAdmin } from '/js/admin.js';
+    import { initTheme } from './js/utils.js';
+    import { renderNavAuth } from './js/auth.js';
+    import { initSocketClient } from './js/socket.js';
+    import { initAdmin } from './js/admin.js';
 
     document.addEventListener('DOMContentLoaded', async () => {
       initTheme();

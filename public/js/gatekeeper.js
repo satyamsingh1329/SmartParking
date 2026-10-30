@@ -6,11 +6,12 @@ import { getStoredUser, isAuthenticated } from './auth.js';
 import { onSocketEvent } from './socket.js';
 
 export async function initGatekeeper() {
+  const isStaticPages = window.location.hostname.endsWith('github.io') && !localStorage.getItem('parkpulse_api_url');
   const user = getStoredUser();
-  if (!isAuthenticated() || (user.role !== 'GATEKEEPER' && user.role !== 'ADMIN')) {
+  if (!isStaticPages && (!isAuthenticated() || (user?.role !== 'GATEKEEPER' && user?.role !== 'ADMIN'))) {
     showToast('Gatekeeper or Admin authorization required', 'error');
     setTimeout(() => {
-      window.location.href = '/login.html?redirect=/gatekeeper.html';
+      window.location.href = './login.html?redirect=./gatekeeper.html';
     }, 1000);
     return;
   }

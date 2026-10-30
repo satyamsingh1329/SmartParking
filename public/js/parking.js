@@ -333,7 +333,7 @@ function setupDrawerListeners() {
   document.getElementById('drawer-confirm-btn')?.addEventListener('click', () => {
     if (!selectedSlot) return;
     // Redirect to booking wizard with query params
-    window.location.href = `/booking.html?slotId=${selectedSlot._id}&locationId=${selectedSlot.locationId?._id || selectedSlot.locationId}&duration=${selectedDuration}&vehicleType=${selectedVehicleType}`;
+    window.location.href = `./booking.html?slotId=${selectedSlot._id}&locationId=${selectedSlot.locationId?._id || selectedSlot.locationId}&duration=${selectedDuration}&vehicleType=${selectedVehicleType}`;
   });
 }
 

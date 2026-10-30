@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ParkPulse Analytics — Smart Parking Business Intelligence Platform</title>
   <meta name="description" content="College syllabus-aligned enterprise business intelligence platform for smart parking analytics: Descriptive, Diagnostic, Predictive, Prescriptive, Excel practicals, MySQL 8 queries, Oracle SQL, and Tableau dashboards.">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
@@ -216,18 +216,18 @@
   <!-- Navigation Bar -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="/index.html" class="brand-logo">
+      <a href="./index.html" class="brand-logo">
         <div class="brand-icon">⚡</div>
         <span class="brand-name">ParkPulse Analytics BI</span>
       </a>
 
       <div class="nav-links">
-        <a href="/index.html" class="nav-link">Home</a>
-        <a href="/parking.html" class="nav-link">Find & Reserve</a>
-        <a href="/dashboard.html" class="nav-link">My Dashboard</a>
-        <a href="/gatekeeper.html" class="nav-link">Gatekeeper</a>
-        <a href="/admin.html" class="nav-link">Operator Portal</a>
-        <a href="/analytics.html" class="nav-link active" style="color: var(--cyan); font-weight: 700;">📊 Analytics BI</a>
+        <a href="./index.html" class="nav-link">Home</a>
+        <a href="./parking.html" class="nav-link">Find & Reserve</a>
+        <a href="./dashboard.html" class="nav-link">My Dashboard</a>
+        <a href="./gatekeeper.html" class="nav-link">Gatekeeper</a>
+        <a href="./admin.html" class="nav-link">Operator Portal</a>
+        <a href="./analytics.html" class="nav-link active" style="color: var(--cyan); font-weight: 700;">📊 Analytics BI</a>
       </div>
 
       <div class="nav-actions">
@@ -261,7 +261,7 @@
       <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
         <button class="btn btn-secondary btn-sm" id="btn-print-report">🖨️ Print BI Report</button>
         <button class="btn btn-secondary btn-sm" id="btn-refresh-bi">↻ Refresh Telemetry</button>
-        <a href="/admin.html" class="btn btn-secondary btn-sm">← Operator Portal</a>
+        <a href="./admin.html" class="btn btn-secondary btn-sm">← Operator Portal</a>
       </div>
     </div>
 
@@ -858,7 +858,7 @@
           </p>
         </div>
 
-        <a href="/api/admin/analytics/download/excel" class="btn btn-primary" id="btn-download-excel-master">
+        <a href="./analytics/ParkPulse_Analytics_Practicals.xlsx" download="ParkPulse_Analytics_Practicals.xlsx" class="btn btn-primary" id="btn-download-excel-master">
           📗 Download Excel Workbook (.xlsx)
         </a>
       </div>
@@ -1009,9 +1009,9 @@
         </div>
 
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <a href="/api/admin/analytics/download/sql-queries" class="btn btn-secondary btn-sm">⬇ MySQL Queries (.sql)</a>
-          <a href="/api/admin/analytics/download/sql-oracle" class="btn btn-secondary btn-sm">⬇ Oracle Queries (.sql)</a>
-          <a href="/api/admin/analytics/download/oracle-guide" class="btn btn-secondary btn-sm">📖 Oracle Guide (.md)</a>
+          <a href="./analytics/sql/analysis_queries.sql" download="analysis_queries.sql" class="btn btn-secondary btn-sm">⬇ MySQL Queries (.sql)</a>
+          <a href="./analytics/sql/oracle_queries.sql" download="oracle_queries.sql" class="btn btn-secondary btn-sm">⬇ Oracle Queries (.sql)</a>
+          <a href="./analytics/sql/oracle_setup_guide.md" download="oracle_setup_guide.md" class="btn btn-secondary btn-sm">📖 Oracle Guide (.md)</a>
         </div>
       </div>
 
@@ -1051,9 +1051,9 @@
         </div>
 
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <a href="/api/admin/analytics/download/tableau-syllabus" class="btn btn-primary btn-sm">📖 Tableau Master Syllabus Guide</a>
-          <a href="/api/admin/analytics/download/tableau-guide" class="btn btn-secondary btn-sm">📐 3 Dashboard Blueprints</a>
-          <a href="/api/admin/analytics/download/tableau-fields" class="btn btn-secondary btn-sm">📋 Calculated Fields</a>
+          <a href="./tableau/tableau_syllabus_guide.md" download="tableau_syllabus_guide.md" class="btn btn-primary btn-sm">📖 Tableau Master Syllabus Guide</a>
+          <a href="./tableau/tableau_dashboard_guide.md" download="tableau_dashboard_guide.md" class="btn btn-secondary btn-sm">📐 3 Dashboard Blueprints</a>
+          <a href="./tableau/tableau_calculated_fields.md" download="tableau_calculated_fields.md" class="btn btn-secondary btn-sm">📋 Calculated Fields</a>
         </div>
       </div>
 
@@ -1139,10 +1139,10 @@
           Connect these clean relational extracts directly via <strong>Tableau Text File Connection</strong>:
         </p>
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-          <a href="/api/admin/analytics/download/dataset-bookings" class="export-btn">⬇ bookings.csv (500 records)</a>
-          <a href="/api/admin/analytics/download/dataset-customers" class="export-btn">⬇ customers.csv (100 users)</a>
-          <a href="/api/admin/analytics/download/dataset-locations" class="export-btn">⬇ parking_locations.csv</a>
-          <a href="/api/admin/analytics/download/dataset-sessions" class="export-btn">⬇ parking_sessions.csv</a>
+          <a href="./analytics/datasets/bookings.csv" download="bookings.csv" class="export-btn">⬇ bookings.csv (500 records)</a>
+          <a href="./analytics/datasets/customers.csv" download="customers.csv" class="export-btn">⬇ customers.csv (100 users)</a>
+          <a href="./analytics/datasets/parking_locations.csv" download="parking_locations.csv" class="export-btn">⬇ parking_locations.csv</a>
+          <a href="./analytics/datasets/parking_sessions.csv" download="parking_sessions.csv" class="export-btn">⬇ parking_sessions.csv</a>
         </div>
       </section>
     </div>
@@ -1168,7 +1168,7 @@
           <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
             Exports transactions that match your currently selected <strong>Date Range, Parking Facility, and Vehicle Category</strong> filters. Customer PII is fully sanitized.
           </p>
-          <a href="/api/admin/analytics/export/csv/filtered" class="btn btn-primary" id="btn-export-filtered-csv" style="width: 100%; text-align: center;">
+          <a href="./analytics/datasets/bookings.csv" download="filtered_bookings.csv" class="btn btn-primary" id="btn-export-filtered-csv" style="width: 100%; text-align: center;">
             ⬇ Export Filtered Bookings CSV
           </a>
         </div>
@@ -1181,7 +1181,7 @@
           <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
             Download the complete 6-sheet syllabus workbook containing 500 rows, working column formulas, conditional formatting, and pivot guides.
           </p>
-          <a href="/api/admin/analytics/download/excel" class="btn btn-primary" style="width: 100%; text-align: center;">
+          <a href="./analytics/ParkPulse_Analytics_Practicals.xlsx" download="ParkPulse_Analytics_Practicals.xlsx" class="btn btn-primary" style="width: 100%; text-align: center;">
             ⬇ Download ParkPulse_Analytics_Practicals.xlsx
           </a>
         </div>
@@ -1195,8 +1195,8 @@
             Download normalized 3NF schemas and 10 tested syllabus queries for both MySQL 8.0 and Oracle Database.
           </p>
           <div style="display: flex; gap: 0.5rem;">
-            <a href="/api/admin/analytics/download/sql-queries" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center;">MySQL (.sql)</a>
-            <a href="/api/admin/analytics/download/sql-oracle" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center;">Oracle (.sql)</a>
+            <a href="./analytics/sql/analysis_queries.sql" download="analysis_queries.sql" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center;">MySQL (.sql)</a>
+            <a href="./analytics/sql/oracle_queries.sql" download="oracle_queries.sql" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center;">Oracle (.sql)</a>
           </div>
         </div>
       </div>
@@ -1222,10 +1222,10 @@
   </footer>
 
   <script type="module">
-    import { initTheme } from '/js/utils.js';
-    import { renderNavAuth } from '/js/auth.js';
-    import { initSocketClient } from '/js/socket.js';
-    import { initAnalytics } from '/js/analytics.js';
+    import { initTheme } from './js/utils.js';
+    import { renderNavAuth } from './js/auth.js';
+    import { initSocketClient } from './js/socket.js';
+    import { initAnalytics } from './js/analytics.js';
 
     document.addEventListener('DOMContentLoaded', async () => {
       initTheme();

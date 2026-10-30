@@ -104,6 +104,7 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Static Assets with HTML extension resolution
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
+app.use(express.static(__dirname, { extensions: ['html'] }));
 
 // Direct Frontend Page Routes (clean URL support for /analytics, /admin, /dashboard, etc.)
 const frontendPages = [

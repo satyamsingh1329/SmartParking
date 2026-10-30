@@ -10,7 +10,7 @@ let currentActiveBooking = null;
 
 export async function initDashboard() {
   if (!isAuthenticated()) {
-    window.location.href = '/login.html?redirect=/dashboard.html';
+    window.location.href = './login.html?redirect=./dashboard.html';
     return;
   }
 
@@ -68,7 +68,7 @@ async function loadActiveSessionCard() {
           <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 400px; margin: 0 auto 1.5rem auto;">
             Need a secure spot for your car, bike, or EV? Reserve a bay in seconds with real-time navigation.
           </p>
-          <a href="/parking.html" class="btn btn-primary">Find & Reserve Parking</a>
+          <a href="./parking.html" class="btn btn-primary">Find & Reserve Parking</a>
         </div>
       `;
     }
@@ -97,7 +97,7 @@ function renderActiveSessionCard(booking, container) {
           </div>
         </div>
         <div style="display: flex; gap: 0.65rem;">
-          <a href="/parking-pass.html?id=${booking.bookingId}" class="btn btn-secondary btn-sm">📱 View Pass</a>
+          <a href="./parking-pass.html?id=${booking.bookingId}" class="btn btn-secondary btn-sm">📱 View Pass</a>
           <button class="btn btn-primary btn-sm" id="btn-extend-modal">⏳ Extend Stay</button>
         </div>
       </div>
@@ -213,7 +213,7 @@ async function loadBookingsHistory() {
 
       tr.innerHTML = `
         <td style="padding: 1rem 0.75rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;">
-          <a href="/parking-pass.html?id=${b.bookingId}" style="color: var(--primary); text-decoration: underline;">${b.bookingId}</a>
+          <a href="./parking-pass.html?id=${b.bookingId}" style="color: var(--primary); text-decoration: underline;">${b.bookingId}</a>
         </td>
         <td style="padding: 1rem 0.75rem;">${b.locationId?.name || 'ParkPulse Hub'}</td>
         <td style="padding: 1rem 0.75rem; font-weight: 600;">${b.slotId?.slotNumber || 'N/A'}</td>

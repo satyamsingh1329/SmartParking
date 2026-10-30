@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParkPulse | Next-Gen Real-Time Smart Parking Automation</title>
+  <meta name="description" content="Find. Reserve. Park. Move. Next-gen automated real-time smart parking platform with intelligent slot recommendations, dynamic pricing, and digital QR passes.">
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="./index.html" class="brand-logo">
+        <div class="brand-icon">🚗</div>
+        <span class="brand-name">ParkPulse</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="./index.html" class="nav-link active">Home</a>
+        <a href="./parking.html" class="nav-link">Find & Reserve</a>
+        <a href="./dashboard.html" class="nav-link">My Dashboard</a>
+        <a href="./gatekeeper.html" class="nav-link">Gatekeeper</a>
+        <a href="./admin.html" class="nav-link">Admin Console</a>
+        <a href="./analytics.html" class="nav-link" style="color: var(--cyan); font-weight: 700;">📊 Analytics BI</a>
+      </div>
+
+      <div class="nav-actions">
+        <div class="live-socket-indicator" id="socket-indicator">
+          <div class="pulse-dot" id="socket-pulse-dot"></div>
+          <span id="socket-label">LIVE SYNC</span>
+        </div>
+
+        <button class="theme-toggle-btn" aria-label="Toggle theme">☀️</button>
+        <div id="nav-auth-container"></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header style="padding: 4.5rem 1.5rem 3rem 1.5rem; text-align: center; position: relative;">
+    <div style="max-width: 900px; margin: 0 auto;">
+      <div style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 1rem; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--primary-glow); border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 700; color: var(--primary); margin-bottom: 1.5rem;">
+        <span>⚡ IoT SIMULATION & ZERO-LATENCY REAL-TIME TELEMETRY</span>
+      </div>
+
+      <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800; line-height: 1.15; letter-spacing: -1.5px; margin-bottom: 1.25rem;">
+        Parking, without the <br>
+        <span style="background: linear-gradient(135deg, var(--primary), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">parking hunt.</span>
+      </h1>
+
+      <p style="font-size: clamp(1.05rem, 2vw, 1.25rem); color: var(--text-secondary); max-width: 650px; margin: 0 auto 2.25rem auto; line-height: 1.6;">
+        Find your best slot, reserve instantly with atomic locking, and glide into parking with friction-free digital QR passes.
+      </p>
+
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="./parking.html" class="btn btn-primary btn-lg">🚀 Find Parking Now</a>
+        <a href="#live-stats" class="btn btn-secondary btn-lg">📊 View Live Availability</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Real-Time Metrics Strip (Database Backed) -->
+  <section id="live-stats" style="max-width: 1200px; margin: 0 auto 4rem auto; padding: 0 1.5rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem;">
+      
+      <div class="glass-card stat-card">
+        <div class="stat-icon-wrapper cyan">🅿️</div>
+        <div class="stat-content">
+          <span class="stat-value" id="home-total-slots">--</span>
+          <span class="stat-label">Total System Capacity</span>
+        </div>
+      </div>
+
+      <div class="glass-card stat-card">
+        <div class="stat-icon-wrapper primary">🟢</div>
+        <div class="stat-content">
+          <span class="stat-value" style="color: var(--primary);" id="home-available-slots">--</span>
+          <span class="stat-label">Available Now</span>
+        </div>
+      </div>
+
+      <div class="glass-card stat-card">
+        <div class="stat-icon-wrapper crimson">🔴</div>
+        <div class="stat-content">
+          <span class="stat-value" style="color: var(--crimson);" id="home-occupied-slots">--</span>
+          <span class="stat-label">Vehicles Parked</span>
+        </div>
+      </div>
+
+      <div class="glass-card stat-card">
+        <div class="stat-icon-wrapper amber">🟡</div>
+        <div class="stat-content">
+          <span class="stat-value" style="color: var(--amber);" id="home-reserved-slots">--</span>
+          <span class="stat-label">Reserved Hold</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Smart Tip Banner -->
+    <div style="margin-top: 1.5rem; padding: 1rem 1.5rem; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1.5rem;">💡</span>
+        <div>
+          <strong style="color: var(--cyan);">ParkPulse Smart Recommendation Tip:</strong>
+          <span style="color: var(--text-secondary); margin-left: 0.35rem;">Facility congestion is historically lowest between <strong>2:00 PM – 4:00 PM</strong>.</span>
+        </div>
+      </div>
+      <a href="./parking.html" class="btn btn-cyan btn-sm">Smart Slot Matcher →</a>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section style="max-width: 1200px; margin: 0 auto 5rem auto; padding: 0 1.5rem; text-align: center;">
+    <h2 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0.75rem;">
+      Friction-Free Parking in 5 Simple Steps
+    </h2>
+    <p style="color: var(--text-secondary); margin-bottom: 3rem;">From search to departure, ParkPulse powers every step with real-time intelligence.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+      <div class="glass-card" style="padding: 1.75rem; text-align: left;">
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--primary); margin-bottom: 0.5rem;">01</div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem;">Find</h3>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;">Check live 2D bay occupancy maps across University, Mall, and Tech Park facilities.</p>
+      </div>
+
+      <div class="glass-card" style="padding: 1.75rem; text-align: left;">
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--cyan); margin-bottom: 0.5rem;">02</div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem;">Reserve</h3>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;">Atomic lock guarantees your chosen slot. Get transparent quotes with dynamic pricing.</p>
+      </div>
+
+      <div class="glass-card" style="padding: 1.75rem; text-align: left;">
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--amber); margin-bottom: 0.5rem;">03</div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem;">Scan</h3>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;">Drive up to the automated barrier. Gatekeeper verifies your digital QR pass in milliseconds.</p>
+      </div>
+
+      <div class="glass-card" style="padding: 1.75rem; text-align: left;">
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--purple); margin-bottom: 0.5rem;">04</div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem;">Park</h3>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;">Bay sensor locks occupancy. Monitor active session countdowns on your personal dashboard.</p>
+      </div>
+
+      <div class="glass-card" style="padding: 1.75rem; text-align: left;">
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--gold); margin-bottom: 0.5rem;">05</div>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem;">Move</h3>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;">Automated checkout with digital receipt generation and reward points credited instantly.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Facilities Showcase Section -->
+  <section style="max-width: 1200px; margin: 0 auto 5rem auto; padding: 0 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h2 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px;">Supported Facilities</h2>
+        <p style="color: var(--text-secondary); margin-top: 0.25rem;">Real-time multi-level parking telemetry across our live campus and commercial network.</p>
+      </div>
+      <a href="./parking.html" class="btn btn-secondary">Explore All Facilities →</a>
+    </div>
+
+    <div id="home-facilities-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+      <!-- Populated dynamically via JS -->
+      <div class="glass-card" style="text-align: center; padding: 2rem; grid-column: 1 / -1;">
+        <div class="pulse-dot" style="margin: 0 auto 1rem auto;"></div>
+        <p style="color: var(--text-muted);">Connecting to facility sensors...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="margin-top: auto; border-top: 1px solid var(--border-color); background: var(--bg-secondary); padding: 3rem 1.5rem 2rem 1.5rem;">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+      <div class="brand-logo">
+        <div class="brand-icon">🚗</div>
+        <span class="brand-name">ParkPulse</span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.88rem;">
+        © 2026 ParkPulse Platform. Next-Gen Real-Time Smart Parking Automation & Space Allocation.
+      </p>
+      <div style="display: flex; gap: 1rem; font-size: 0.88rem; color: var(--text-secondary);">
+        <a href="./parking.html">Find Slot</a>
+        <a href="./dashboard.html">Dashboard</a>
+        <a href="./gatekeeper.html">Gatekeeper</a>
+        <a href="./admin.html">Admin</a>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { apiRequest, initTheme } from './js/utils.js';
+    import { renderNavAuth } from './js/auth.js';
+    import { initSocketClient, onSocketEvent } from './js/socket.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTheme();
+      renderNavAuth();
+      initSocketClient();
+
+      // Load Live Stats from DB
+      async function refreshLiveStats() {
+        try {
+          const res = await apiRequest('/api/parking');
+          let total = 0, available = 0, occupied = 0, reserved = 0;
+
+          res.data.forEach(loc => {
+            if (loc.stats) {
+              total += loc.stats.total;
+              available += loc.stats.available;
+              occupied += loc.stats.occupied;
+              reserved += loc.stats.reserved;
+            }
+          });
+
+          document.getElementById('home-total-slots').textContent = total;
+          document.getElementById('home-available-slots').textContent = available;
+          document.getElementById('home-occupied-slots').textContent = occupied;
+          document.getElementById('home-reserved-slots').textContent = reserved;
+
+          // Render Facilities
+          const facContainer = document.getElementById('home-facilities-container');
+          if (facContainer) {
+            facContainer.innerHTML = '';
+            res.data.forEach(loc => {
+              const card = document.createElement('div');
+              card.className = 'glass-card';
+              card.style.display = 'flex';
+              card.style.flexDirection = 'column';
+              card.style.justifyContent = 'space-between';
+
+              const cong = loc.stats?.congestion || 'LOW';
+              const congBadge = `<span class="badge ${cong === 'HIGH' ? 'badge-occupied' : (cong === 'MODERATE' ? 'badge-reserved' : 'badge-available')}">● ${cong} CONGESTION</span>`;
+              const imgPath = loc.image ? (loc.image.startsWith('/') ? '.' + loc.image : loc.image) : '';
+              const imgTag = imgPath ? `<img src="${imgPath}" alt="${loc.name}" style="width: 100%; height: 150px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 1rem; border: 1px solid var(--border-color);" loading="lazy">` : '';
+
+              card.innerHTML = `
+                <div>
+                  ${imgTag}
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                    <h3 style="font-size: 1.25rem; font-weight: 700;">${loc.name}</h3>
+                    ${congBadge}
+                  </div>
+                  <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.25rem;">📍 ${loc.address}, ${loc.city}</p>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+                    <div>
+                      <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Available Bays</span>
+                      <div style="font-size: 1.35rem; font-weight: 800; color: var(--primary);">🟢 ${loc.stats?.available || 0}</div>
+                    </div>
+                    <div>
+                      <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Occupancy</span>
+                      <div style="font-size: 1.35rem; font-weight: 800;">${loc.stats?.occupancyRate || 0}%</div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.5rem;">
+                    ${loc.amenities.map(a => `<span style="font-size: 0.75rem; padding: 2px 8px; background: var(--bg-surface); border-radius: var(--radius-full); color: var(--text-secondary);">${a}</span>`).join('')}
+                  </div>
+                </div>
+
+                <a href="./parking.html?locationId=${loc._id}" class="btn btn-primary btn-block">View Live 2D Floor Map</a>
+              `;
+              facContainer.appendChild(card);
+            });
+          }
+        } catch (e) {
+          console.error('Home stats load error:', e);
+        }
+      }
+
+      await refreshLiveStats();
+
+      // Socket live updates
+      onSocketEvent('stats:updated', () => refreshLiveStats());
+      onSocketEvent('slot:updated', () => refreshLiveStats());
+    });
+  </script>
+</body>
+</html>

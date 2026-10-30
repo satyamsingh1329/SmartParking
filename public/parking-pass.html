@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Digital Parking Pass | ParkPulse</title>
   <meta name="description" content="Official ParkPulse digital parking pass with secure barcode & QR validation.">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -14,17 +14,17 @@
   <!-- Navigation Bar -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="/index.html" class="brand-logo">
+      <a href="./index.html" class="brand-logo">
         <div class="brand-icon">🚗</div>
         <span class="brand-name">ParkPulse</span>
       </a>
 
       <div class="nav-links">
-        <a href="/index.html" class="nav-link">Home</a>
-        <a href="/parking.html" class="nav-link">Find & Reserve</a>
-        <a href="/dashboard.html" class="nav-link">My Dashboard</a>
-        <a href="/gatekeeper.html" class="nav-link">Gatekeeper</a>
-        <a href="/admin.html" class="nav-link">Admin Console</a>
+        <a href="./index.html" class="nav-link">Home</a>
+        <a href="./parking.html" class="nav-link">Find & Reserve</a>
+        <a href="./dashboard.html" class="nav-link">My Dashboard</a>
+        <a href="./gatekeeper.html" class="nav-link">Gatekeeper</a>
+        <a href="./admin.html" class="nav-link">Admin Console</a>
       </div>
 
       <div class="nav-actions">
@@ -93,16 +93,16 @@
       <!-- Action Buttons -->
       <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
         <button class="btn btn-secondary" onclick="window.print()">🖨️ Print Pass</button>
-        <a href="/dashboard.html" class="btn btn-primary">My Dashboard →</a>
+        <a href="./dashboard.html" class="btn btn-primary">My Dashboard →</a>
       </div>
     </div>
 
   </main>
 
   <script type="module">
-    import { apiRequest, showToast, formatDateTime, formatTimeOnly, initTheme } from '/js/utils.js';
-    import { renderNavAuth } from '/js/auth.js';
-    import { initSocketClient } from '/js/socket.js';
+    import { apiRequest, showToast, formatDateTime, formatTimeOnly, initTheme } from './js/utils.js';
+    import { renderNavAuth } from './js/auth.js';
+    import { initSocketClient } from './js/socket.js';
 
     document.addEventListener('DOMContentLoaded', async () => {
       initTheme();

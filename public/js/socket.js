@@ -1,7 +1,7 @@
 /**
  * ParkPulse Real-Time Socket.io Client Manager
  */
-import { showToast } from './utils.js';
+import { showToast, getApiBaseUrl } from './utils.js';
 
 let socket = null;
 const eventHandlers = new Map();
@@ -9,13 +9,26 @@ const eventHandlers = new Map();
 export function initSocketClient() {
   if (socket) return socket;
 
+  const indicator = document.getElementById('socket-indicator');
+  const dot = document.getElementById('socket-pulse-dot');
+  const label = document.getElementById('socket-label');
+
+  const apiBase = getApiBaseUrl();
+
+  // On static GitHub Pages without connected backend:
+  if (apiBase === null) {
+    if (dot) dot.style.background = '#06b6d4';
+    if (label) label.textContent = 'STATIC PREVIEW';
+    return null;
+  }
+
   // Connect to the host origin
   if (typeof io !== 'function') {
     console.warn('[Socket.io] Client script not loaded yet');
     return null;
   }
 
-  socket = io();
+  socket = apiBase ? io(apiBase) : io();
 
   const indicator = document.getElementById('socket-indicator');
   const dot = document.getElementById('socket-pulse-dot');

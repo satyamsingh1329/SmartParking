@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign In | ParkPulse Smart Parking</title>
   <meta name="description" content="Sign in to your ParkPulse account to manage smart parking reservations.">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 </head>
 <body style="display: flex; flex-direction: column; min-height: 100vh;">
@@ -13,14 +13,14 @@
   <!-- Navigation Bar -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="/index.html" class="brand-logo">
+      <a href="./index.html" class="brand-logo">
         <div class="brand-icon">🚗</div>
         <span class="brand-name">ParkPulse</span>
       </a>
 
       <div class="nav-links">
-        <a href="/index.html" class="nav-link">Home</a>
-        <a href="/parking.html" class="nav-link">Find & Reserve</a>
+        <a href="./index.html" class="nav-link">Home</a>
+        <a href="./parking.html" class="nav-link">Find & Reserve</a>
       </div>
 
       <div class="nav-actions">
@@ -75,15 +75,15 @@
       </form>
 
       <div style="text-align: center; margin-top: 1.5rem; font-size: 0.88rem; color: var(--text-secondary);">
-        Don't have an account? <a href="/register.html" style="color: var(--primary); font-weight: 600;">Sign up (+50 Bonus Points)</a>
+        Don't have an account? <a href="./register.html" style="color: var(--primary); font-weight: 600;">Sign up (+50 Bonus Points)</a>
       </div>
     </div>
 
   </main>
 
   <script type="module">
-    import { initTheme, showToast } from '/js/utils.js';
-    import { loginUser } from '/js/auth.js';
+    import { initTheme, showToast } from './js/utils.js';
+    import { loginUser } from './js/auth.js';
 
     document.addEventListener('DOMContentLoaded', () => {
       initTheme();

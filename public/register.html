@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create an Account | ParkPulse</title>
   <meta name="description" content="Register for ParkPulse and get 50 bonus reward points for smart parking reservations.">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 </head>
 <body style="display: flex; flex-direction: column; min-height: 100vh;">
@@ -13,14 +13,14 @@
   <!-- Navigation Bar -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="/index.html" class="brand-logo">
+      <a href="./index.html" class="brand-logo">
         <div class="brand-icon">🚗</div>
         <span class="brand-name">ParkPulse</span>
       </a>
 
       <div class="nav-links">
-        <a href="/index.html" class="nav-link">Home</a>
-        <a href="/parking.html" class="nav-link">Find & Reserve</a>
+        <a href="./index.html" class="nav-link">Home</a>
+        <a href="./parking.html" class="nav-link">Find & Reserve</a>
       </div>
 
       <div class="nav-actions">
@@ -74,15 +74,15 @@
       </form>
 
       <div style="text-align: center; margin-top: 1.5rem; font-size: 0.88rem; color: var(--text-secondary);">
-        Already have an account? <a href="/login.html" style="color: var(--primary); font-weight: 600;">Sign In</a>
+        Already have an account? <a href="./login.html" style="color: var(--primary); font-weight: 600;">Sign In</a>
       </div>
     </div>
 
   </main>
 
   <script type="module">
-    import { initTheme } from '/js/utils.js';
-    import { registerUser } from '/js/auth.js';
+    import { initTheme } from './js/utils.js';
+    import { registerUser } from './js/auth.js';
 
     document.addEventListener('DOMContentLoaded', () => {
       initTheme();

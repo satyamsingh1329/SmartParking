@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Live Parking Map & Space Allocation | ParkPulse</title>
   <meta name="description" content="Interactive 2D real-time multi-floor parking map with intelligent bay recommendations, dynamic surge pricing, and instant reservation.">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 </head>
 <body>
@@ -13,18 +13,18 @@
   <!-- Navigation Bar -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="/index.html" class="brand-logo">
+      <a href="./index.html" class="brand-logo">
         <div class="brand-icon">🚗</div>
         <span class="brand-name">ParkPulse</span>
       </a>
 
       <div class="nav-links">
-        <a href="/index.html" class="nav-link">Home</a>
-        <a href="/parking.html" class="nav-link active">Find & Reserve</a>
-        <a href="/dashboard.html" class="nav-link">My Dashboard</a>
-        <a href="/gatekeeper.html" class="nav-link">Gatekeeper</a>
-        <a href="/admin.html" class="nav-link">Admin Console</a>
-        <a href="/analytics.html" class="nav-link" style="color: var(--cyan); font-weight: 700;">📊 Analytics BI</a>
+        <a href="./index.html" class="nav-link">Home</a>
+        <a href="./parking.html" class="nav-link active">Find & Reserve</a>
+        <a href="./dashboard.html" class="nav-link">My Dashboard</a>
+        <a href="./gatekeeper.html" class="nav-link">Gatekeeper</a>
+        <a href="./admin.html" class="nav-link">Admin Console</a>
+        <a href="./analytics.html" class="nav-link" style="color: var(--cyan); font-weight: 700;">📊 Analytics BI</a>
       </div>
 
       <div class="nav-actions">
@@ -313,10 +313,10 @@
   </div>
 
   <script type="module">
-    import { initTheme } from '/js/utils.js';
-    import { renderNavAuth } from '/js/auth.js';
-    import { initSocketClient } from '/js/socket.js';
-    import { initParkingMap } from '/js/parking.js';
+    import { initTheme } from './js/utils.js';
+    import { renderNavAuth } from './js/auth.js';
+    import { initSocketClient } from './js/socket.js';
+    import { initParkingMap } from './js/parking.js';
 
     document.addEventListener('DOMContentLoaded', async () => {
       initTheme();

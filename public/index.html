@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ParkPulse | Next-Gen Real-Time Smart Parking Automation</title>
   <meta name="description" content="Find. Reserve. Park. Move. Next-gen automated real-time smart parking platform with intelligent slot recommendations, dynamic pricing, and digital QR passes.">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 </head>
 <body>
@@ -13,18 +13,18 @@
   <!-- Navigation Bar -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="/index.html" class="brand-logo">
+      <a href="./index.html" class="brand-logo">
         <div class="brand-icon">🚗</div>
         <span class="brand-name">ParkPulse</span>
       </a>
 
       <div class="nav-links">
-        <a href="/index.html" class="nav-link active">Home</a>
-        <a href="/parking.html" class="nav-link">Find & Reserve</a>
-        <a href="/dashboard.html" class="nav-link">My Dashboard</a>
-        <a href="/gatekeeper.html" class="nav-link">Gatekeeper</a>
-        <a href="/admin.html" class="nav-link">Admin Console</a>
-        <a href="/analytics.html" class="nav-link" style="color: var(--cyan); font-weight: 700;">📊 Analytics BI</a>
+        <a href="./index.html" class="nav-link active">Home</a>
+        <a href="./parking.html" class="nav-link">Find & Reserve</a>
+        <a href="./dashboard.html" class="nav-link">My Dashboard</a>
+        <a href="./gatekeeper.html" class="nav-link">Gatekeeper</a>
+        <a href="./admin.html" class="nav-link">Admin Console</a>
+        <a href="./analytics.html" class="nav-link" style="color: var(--cyan); font-weight: 700;">📊 Analytics BI</a>
       </div>
 
       <div class="nav-actions">
@@ -56,7 +56,7 @@
       </p>
 
       <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <a href="/parking.html" class="btn btn-primary btn-lg">🚀 Find Parking Now</a>
+        <a href="./parking.html" class="btn btn-primary btn-lg">🚀 Find Parking Now</a>
         <a href="#live-stats" class="btn btn-secondary btn-lg">📊 View Live Availability</a>
       </div>
     </div>
@@ -109,7 +109,7 @@
           <span style="color: var(--text-secondary); margin-left: 0.35rem;">Facility congestion is historically lowest between <strong>2:00 PM – 4:00 PM</strong>.</span>
         </div>
       </div>
-      <a href="/parking.html" class="btn btn-cyan btn-sm">Smart Slot Matcher →</a>
+      <a href="./parking.html" class="btn btn-cyan btn-sm">Smart Slot Matcher →</a>
     </div>
   </section>
 
@@ -160,7 +160,7 @@
         <h2 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px;">Supported Facilities</h2>
         <p style="color: var(--text-secondary); margin-top: 0.25rem;">Real-time multi-level parking telemetry across our live campus and commercial network.</p>
       </div>
-      <a href="/parking.html" class="btn btn-secondary">Explore All Facilities →</a>
+      <a href="./parking.html" class="btn btn-secondary">Explore All Facilities →</a>
     </div>
 
     <div id="home-facilities-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
@@ -183,18 +183,18 @@
         © 2026 ParkPulse Platform. Next-Gen Real-Time Smart Parking Automation & Space Allocation.
       </p>
       <div style="display: flex; gap: 1rem; font-size: 0.88rem; color: var(--text-secondary);">
-        <a href="/parking.html">Find Slot</a>
-        <a href="/dashboard.html">Dashboard</a>
-        <a href="/gatekeeper.html">Gatekeeper</a>
-        <a href="/admin.html">Admin</a>
+        <a href="./parking.html">Find Slot</a>
+        <a href="./dashboard.html">Dashboard</a>
+        <a href="./gatekeeper.html">Gatekeeper</a>
+        <a href="./admin.html">Admin</a>
       </div>
     </div>
   </footer>
 
   <script type="module">
-    import { apiRequest, initTheme } from '/js/utils.js';
-    import { renderNavAuth } from '/js/auth.js';
-    import { initSocketClient, onSocketEvent } from '/js/socket.js';
+    import { apiRequest, initTheme } from './js/utils.js';
+    import { renderNavAuth } from './js/auth.js';
+    import { initSocketClient, onSocketEvent } from './js/socket.js';
 
     document.addEventListener('DOMContentLoaded', async () => {
       initTheme();
@@ -234,9 +234,12 @@
 
               const cong = loc.stats?.congestion || 'LOW';
               const congBadge = `<span class="badge ${cong === 'HIGH' ? 'badge-occupied' : (cong === 'MODERATE' ? 'badge-reserved' : 'badge-available')}">● ${cong} CONGESTION</span>`;
+              const imgPath = loc.image ? (loc.image.startsWith('/') ? '.' + loc.image : loc.image) : '';
+              const imgTag = imgPath ? `<img src="${imgPath}" alt="${loc.name}" style="width: 100%; height: 150px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 1rem; border: 1px solid var(--border-color);" loading="lazy">` : '';
 
               card.innerHTML = `
                 <div>
+                  ${imgTag}
                   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                     <h3 style="font-size: 1.25rem; font-weight: 700;">${loc.name}</h3>
                     ${congBadge}
@@ -259,7 +262,7 @@
                   </div>
                 </div>
 
-                <a href="/parking.html?locationId=${loc._id}" class="btn btn-primary btn-block">View Live 2D Floor Map</a>
+                <a href="./parking.html?locationId=${loc._id}" class="btn btn-primary btn-block">View Live 2D Floor Map</a>
               `;
               facContainer.appendChild(card);
             });

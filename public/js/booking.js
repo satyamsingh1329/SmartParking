@@ -21,7 +21,7 @@ export async function initBookingWizard() {
   if (!isAuthenticated()) {
     showToast('Please sign in to proceed with booking', 'info');
     setTimeout(() => {
-      window.location.href = `/login.html?redirect=${encodeURIComponent(window.location.href)}`;
+      window.location.href = `./login.html?redirect=${encodeURIComponent(window.location.href)}`;
     }, 800);
     return;
   }
@@ -321,7 +321,7 @@ function setupPaymentModal() {
       closeModal('mock-payment-modal');
 
       setTimeout(() => {
-        window.location.href = `/parking-pass.html?id=${res.data.bookingId}`;
+        window.location.href = `./parking-pass.html?id=${res.data.bookingId}`;
       }, 1200);
     } catch (err) {
       showToast(err.message, 'error');

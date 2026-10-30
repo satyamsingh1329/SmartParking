@@ -29,11 +29,13 @@ let sqlExperimentsData = [];
 let currentOutliersList = [];
 
 export async function initAnalytics() {
+  const isStaticPages = window.location.hostname.endsWith('github.io') && !localStorage.getItem('parkpulse_api_url');
   const user = getStoredUser();
-  if (!isAuthenticated() || user.role !== 'ADMIN') {
+
+  if (!isStaticPages && (!isAuthenticated() || user?.role !== 'ADMIN')) {
     showToast('Admin authorization required for Analytics BI Center', 'error');
     setTimeout(() => {
-      window.location.href = '/login.html?redirect=/analytics.html';
+      window.location.href = './login.html?redirect=./analytics.html';
     }, 1200);
     return;
   }
