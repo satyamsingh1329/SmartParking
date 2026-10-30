@@ -31,26 +31,37 @@ const app = express();
 const server = http.createServer(app);
 
 // CORS Policy Configuration
+const defaultOrigins = [
+  'http://localhost:5000',
+  'http://localhost:5001',
+  'http://127.0.0.1:5000',
+  'http://127.0.0.1:5001',
+  'https://satyamsingh1329.github.io'
+];
+
 const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-  : ['http://localhost:5000', 'http://localhost:5001', 'http://127.0.0.1:5000', 'http://127.0.0.1:5001'];
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim().replace(/\/+$/, ''))
+  : defaultOrigins;
 
 const corsOptions = {
   origin: (origin, callback) => {
+    const cleanOrigin = origin ? origin.replace(/\/+$/, '') : null;
     if (
-      !origin ||
+      !cleanOrigin ||
       !process.env.CORS_ORIGIN ||
       allowedOrigins.includes('*') ||
-      allowedOrigins.includes(origin) ||
+      allowedOrigins.includes(cleanOrigin) ||
+      cleanOrigin.endsWith('.github.io') ||
       process.env.NODE_ENV !== 'production'
     ) {
       callback(null, true);
     } else {
-      callback(new Error('Blocked by CORS policy'));
+      callback(new Error(`Blocked by CORS policy: ${origin}`));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-sensor-key']
 };
 
 // Initialize Socket.io with matching CORS policy
@@ -245,39 +256,40 @@ const gracefulShutdown = async (signal) => {
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-// Boot Sequence: Connect to DB first, then start server
+// Boot Sequence: Bind HTTP server first, then connect MongoDB
+const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 5000;
 
 const boot = async () => {
+  // 1. Start HTTP server bound to 0.0.0.0 for Render / cloud deployment
+  server.listen(PORT, HOST, () => {
+    console.log(`[ParkPulse Server] Running on http://${HOST}:${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+    console.log(`[ParkPulse URL] Access application at: http://localhost:${PORT}`);
+    console.log(`[ParkPulse Health] Health check ready at: http://${HOST}:${PORT}/health`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      const fallbackPort = Number(PORT) + 1;
+      console.warn(`[ParkPulse] Port ${PORT} is already in use. Falling back to port ${fallbackPort}...`);
+      server.listen(fallbackPort, HOST, () => {
+        console.log(`[ParkPulse Server] Running on http://${HOST}:${fallbackPort} in ${process.env.NODE_ENV || 'development'} mode`);
+        console.log(`[ParkPulse URL] Access application at: http://localhost:${fallbackPort}`);
+      });
+    } else {
+      console.error('[ParkPulse Server Error]', err.message);
+      process.exit(1);
+    }
+  });
+
+  // 2. Connect to MongoDB
   try {
-    // 1. Connect to MongoDB (blocks until success or exits on failure)
     await connectDB();
-
-    // 2. Start HTTP server only after DB is ready
-    server.listen(PORT, () => {
-      console.log(`[ParkPulse Server] Running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-      console.log(`[ParkPulse URL] Access application at: http://localhost:${PORT}`);
-    });
-
-    server.on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        const fallbackPort = Number(PORT) + 1;
-        console.warn(`[ParkPulse] Port ${PORT} is already in use. Falling back to port ${fallbackPort}...`);
-        server.listen(fallbackPort, () => {
-          console.log(`[ParkPulse Server] Running on port ${fallbackPort} in ${process.env.NODE_ENV || 'development'} mode`);
-          console.log(`[ParkPulse URL] Access application at: http://localhost:${fallbackPort}`);
-        });
-      } else {
-        console.error('[ParkPulse Server Error]', err.message);
-        process.exit(1);
-      }
-    });
-
-    // 3. Start background jobs
+    // 3. Start background jobs once DB is connected
     startBackgroundJobs();
   } catch (err) {
-    console.error('[ParkPulse] Failed to start:', err.message);
-    process.exit(1);
+    console.warn(`[ParkPulse Database] Connection pending or failed: ${err.message}`);
+    console.warn('[ParkPulse Database] /health responds with alive status, /api/health indicates db readiness.');
   }
 };
 

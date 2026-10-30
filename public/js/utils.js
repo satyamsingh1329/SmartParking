@@ -9,6 +9,7 @@ import {
   DEMO_DISTRIBUTION_DATA,
   DEMO_SQL_EXPERIMENTS
 } from './demoData.js';
+import { APP_CONFIG } from './config.js';
 
 // Toast Notifications
 export function showToast(message, type = 'info', duration = 4000) {
@@ -93,6 +94,10 @@ export function formatTimeOnly(dateStr) {
 export function getApiBaseUrl() {
   const saved = localStorage.getItem('parkpulse_api_url');
   if (saved && saved.trim()) return saved.trim().replace(/\/+$/, '');
+
+  if (APP_CONFIG && APP_CONFIG.BACKEND_API_URL && APP_CONFIG.BACKEND_API_URL.trim()) {
+    return APP_CONFIG.BACKEND_API_URL.trim().replace(/\/+$/, '');
+  }
 
   if (window.PARKPULSE_API_URL) return window.PARKPULSE_API_URL.replace(/\/+$/, '');
 

@@ -296,47 +296,104 @@ TEST_BASE_URL=http://localhost:5000
 
 ## 🚀 16. Production Deployment Guide
 
-ParkPulse Analytics is architected for zero-downtime, cloud-native deployments supporting Docker containers, PaaS platforms (Render, Railway, Heroku), and standalone Linux virtual machines.
+ParkPulse Analytics is architected for a dual deployment topology:
+1. **Static Frontend:** Hosted on **GitHub Pages** (`https://satyamsingh1329.github.io/SmartParking/`).
+2. **Dynamic Backend & Real-Time API:** Hosted on **Render** (or Railway / Docker), connected to **MongoDB Atlas**.
 
-### A. Docker Container Deployment
+---
 
-1. **Build Production Image:**
+### Step 1: Deploy MongoDB Atlas Database
+
+1. Sign up / Log in to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
+2. Create a free shared cluster (e.g. **M0 Free Tier**).
+3. Under **Security → Database Access**, create a database user:
+   - Authentication Method: **Password**
+   - Role: **Read and write to any database**
+4. Under **Security → Network Access**, add an IP access rule:
+   - Allow Access from Anywhere: `0.0.0.0/0` (required for Render / cloud dynamic IPs).
+5. Under **Deployments → Database → Connect**:
+   - Choose **Drivers** (Node.js).
+   - Copy connection string:
+     ```
+     mongodb+srv://<username>:<password>@cluster0.mongodb.net/parkpulse?retryWrites=true&w=majority
+     ```
+   - Replace `<username>` and `<password>` with your credentials.
+
+---
+
+### Step 2: Deploy Backend to Render
+
+1. Log in to [Render Dashboard](https://dashboard.render.com/).
+2. Click **New +** → **Web Service**.
+3. Connect your GitHub repository: `https://github.com/satyamsingh1329/SmartParking`.
+4. Configure service details:
+   - **Name:** `parkpulse-backend` (or your choice)
+   - **Region:** Closest to your users (e.g., Singapore, Frankfurt, Ohio)
+   - **Branch:** `main`
+   - **Root Directory:** *(leave blank / default)*
+   - **Runtime:** `Node`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+   - **Plan:** `Free`
+5. Under **Environment Variables**, add:
+   | Key | Value / Example | Notes |
+   | :--- | :--- | :--- |
+   | `NODE_ENV` | `production` | Enables production optimizations |
+   | `PORT` | `10000` | Auto-provided by Render |
+   | `HOST` | `0.0.0.0` | Binds to all interfaces |
+   | `MONGO_URI` | `mongodb+srv://<user>:<pass>@.../parkpulse` | Your MongoDB Atlas connection string |
+   | `JWT_SECRET` | *(64-character random string)* | Used to sign auth tokens |
+   | `CORS_ORIGIN` | `https://satyamsingh1329.github.io,http://localhost:5000` | Allows GitHub Pages cross-origin requests |
+6. Click **Create Web Service**.
+7. Render will build and deploy. Once live, note your backend URL (e.g., `https://parkpulse-backend.onrender.com`).
+8. Verify backend health:
+   ```bash
+   curl https://parkpulse-backend.onrender.com/health
+   # Expected response: {"status":"alive"}
+   ```
+
+---
+
+### Step 3: Configure Frontend & GitHub Pages
+
+1. **GitHub Pages Configuration:**
+   - In your GitHub repository: **Settings → Pages**.
+   - Under **Build and deployment → Source**, choose **Deploy from a branch**.
+   - Select Branch: **`main`**, Folder: **`/ (root)`**.
+   - Click **Save**.
+   - Your live website is served at: **https://satyamsingh1329.github.io/SmartParking/**
+
+2. **Connect Frontend to Deployed Render Backend:**
+   - **Option A (Persistent Setting):** Open [`js/config.js`](file:///Volumes/Mac%20A/SmartParking/js/config.js) and set your Render URL:
+     ```javascript
+     export const APP_CONFIG = {
+       BACKEND_API_URL: 'https://parkpulse-backend.onrender.com',
+       ...
+     };
+     ```
+   - **Option B (1-Click in Browser):** Visit `https://satyamsingh1329.github.io/SmartParking/`, click the **⚙️ Backend API** button in the navigation bar, paste your Render URL, and click **Save & Test Connection**.
+
+---
+
+### Step 4: Docker Container Deployment (Alternative)
+
+1. **Build Container Image:**
    ```bash
    docker build -t parkpulse-analytics .
    ```
-2. **Run Container with Environment Variables:**
+2. **Run Container:**
    ```bash
    docker run -d \
      --name parkpulse-app \
      -p 5000:5000 \
      -e NODE_ENV=production \
      -e PORT=5000 \
+     -e HOST=0.0.0.0 \
      -e MONGO_URI="mongodb+srv://<user>:<password>@cluster0.mongodb.net/parkpulse" \
      -e JWT_SECRET="your-secure-random-secret-key-min-32-chars" \
-     -e CORS_ORIGIN="https://your-domain.com" \
+     -e CORS_ORIGIN="https://satyamsingh1329.github.io" \
      parkpulse-analytics
    ```
-3. **Verify Container Liveness:**
-   ```bash
-   curl http://localhost:5000/health
-   # Expected response: {"status":"alive"}
-   ```
-
-### B. Cloud Platform Deployment (Render / Railway / Heroku)
-
-The repository includes pre-configured deployment manifests:
-- `render.yaml` — Infrastructure as Code for Render Web Services.
-- `Procfile` — Standard dyno definition (`web: npm start`).
-- `.dockerignore` — Production build context exclusion.
-
-**Required Production Environment Variables:**
-| Variable | Production Value / Description | Sensitive? |
-| :--- | :--- | :---: |
-| `NODE_ENV` | `production` | No |
-| `PORT` | Platform provided (e.g., `10000` on Render) | No |
-| `MONGO_URI` | MongoDB Atlas cluster connection string | **YES** |
-| `JWT_SECRET` | 64-character cryptographic hexadecimal string | **YES** |
-| `CORS_ORIGIN` | Deployed domain URL (e.g., `https://parkpulse.onrender.com`) | No |
 
 ---
 

@@ -115,11 +115,11 @@
             if (redirect) {
               window.location.href = redirect;
             } else if (user.role === 'ADMIN') {
-              window.location.href = '/admin.html';
+              window.location.href = './admin.html';
             } else if (user.role === 'GATEKEEPER') {
-              window.location.href = '/gatekeeper.html';
+              window.location.href = './gatekeeper.html';
             } else {
-              window.location.href = '/dashboard.html';
+              window.location.href = './dashboard.html';
             }
           }, 600);
         } catch (err) {

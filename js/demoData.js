@@ -299,3 +299,4 @@ export const DEMO_SQL_EXPERIMENTS = [
     takeaway: "Exactly 15 out of 100 registered customers (15%) are inactive, providing a high-conversion cohort for a 'First Park 50% Off' push promotion."
   }
 ];
+

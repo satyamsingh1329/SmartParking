@@ -6,12 +6,15 @@ const connectDB = async () => {
   const mongoURI = process.env.MONGO_URI;
 
   if (!mongoURI) {
-    console.error('[Database] FATAL: MONGO_URI environment variable is not set.');
-    process.exit(1);
+    const err = new Error('MONGO_URI environment variable is not configured');
+    console.error(`[Database] FATAL: ${err.message}`);
+    throw err;
   }
 
   try {
-    const conn = await mongoose.connect(mongoURI);
+    const conn = await mongoose.connect(mongoURI, {
+      serverSelectionTimeoutMS: 10000
+    });
     isConnected = true;
     console.log(`[Database] MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`);
 
@@ -32,8 +35,9 @@ const connectDB = async () => {
 
     return conn;
   } catch (error) {
+    isConnected = false;
     console.error(`[Database Error] Connection failed: ${error.message}`);
-    process.exit(1);
+    throw error;
   }
 };
 
