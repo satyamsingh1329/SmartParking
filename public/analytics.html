@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParkPulse Analytics — Smart Parking Business Intelligence Platform</title>
+  <meta name="description" content="College syllabus-aligned enterprise business intelligence platform for smart parking analytics: Descriptive, Diagnostic, Predictive, Prescriptive, Excel practicals, MySQL 8 queries, Oracle SQL, and Tableau dashboards.">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    /* Tab Navigation */
+    .bi-nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 1.75rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+    }
+    .bi-tab-btn {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: none;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .bi-tab-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .bi-tab-btn.active {
+      color: var(--cyan);
+      background: rgba(6, 182, 212, 0.12);
+      border-color: rgba(6, 182, 212, 0.4);
+      border-bottom: 2px solid var(--cyan);
+    }
+    .bi-tab-pane {
+      display: none;
+    }
+    .bi-tab-pane.active {
+      display: block;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    }
+    .filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 150px;
+      flex: 1;
+    }
+    .filter-item label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    .date-preset-btn {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 600;
+    }
+    .date-preset-btn:hover, .date-preset-btn.active {
+      background: var(--cyan);
+      color: #000;
+      border-color: var(--cyan);
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+    }
+    .metric-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .chart-container-card {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .chart-header h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    .severity-badge {
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .severity-critical { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .severity-warning { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .severity-info { background: rgba(6, 182, 212, 0.2); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.4); }
+    .export-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 0.95rem;
+      border-radius: var(--radius-md);
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .export-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--cyan);
+      transform: translateY(-1px);
+    }
+    .sql-code-block {
+      background: #090d16;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem;
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.82rem;
+      color: #7dd3fc;
+      overflow-x: auto;
+      position: relative;
+    }
+    .copy-code-btn {
+      position: absolute;
+      top: 0.4rem;
+      right: 0.4rem;
+      font-size: 0.72rem;
+      padding: 0.25rem 0.55rem;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+    }
+    .copy-code-btn:hover {
+      background: var(--cyan);
+      color: #000;
+    }
+    .rec-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-left: 4px solid var(--cyan);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    /* Print Styles */
+    @media print {
+      body { background: #fff !important; color: #000 !important; font-size: 11pt; }
+      .navbar, .bi-nav-tabs, .filter-bar, .nav-actions, .btn, .export-btn, footer { display: none !important; }
+      .glass-card, .chart-container-card, .rec-card { border: 1px solid #ccc !important; background: #fff !important; box-shadow: none !important; color: #000 !important; }
+      .stat-value, h1, h2, h3 { color: #000 !important; }
+      .bi-tab-pane { display: block !important; page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/index.html" class="brand-logo">
+        <div class="brand-icon">⚡</div>
+        <span class="brand-name">ParkPulse Analytics BI</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/parking.html" class="nav-link">Find & Reserve</a>
+        <a href="/dashboard.html" class="nav-link">My Dashboard</a>
+        <a href="/gatekeeper.html" class="nav-link">Gatekeeper</a>
+        <a href="/admin.html" class="nav-link">Operator Portal</a>
+        <a href="/analytics.html" class="nav-link active" style="color: var(--cyan); font-weight: 700;">📊 Analytics BI</a>
+      </div>
+
+      <div class="nav-actions">
+        <div class="live-socket-indicator" id="socket-indicator">
+          <div class="pulse-dot" id="socket-pulse-dot"></div>
+          <span id="socket-label">BI LIVE</span>
+        </div>
+        <button class="theme-toggle-btn" aria-label="Toggle theme">☀️</button>
+        <div id="nav-auth-container"></div>
+      </div>
+    </div>
+  </nav>
+
+  <main style="max-width: 1400px; margin: 1.5rem auto; padding: 0 1.5rem; flex: 1;">
+
+    <!-- Top Breadcrumb & Title Area -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem;">
+          <span class="badge" style="background: rgba(6, 182, 212, 0.2); color: var(--cyan); font-weight: 800;">DATA ANALYTICS & BI PLATFORM</span>
+          <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: var(--primary);">MCA SYLLABUS ALIGNED</span>
+        </div>
+        <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 0.3rem 0;">
+          ParkPulse Analytics BI Center
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 0.92rem; margin: 0;">
+          <strong>Find. Reserve. Analyze. Optimize.</strong> • Real Database Aggregations, 4 Analytics Types, Tukey Outliers, Excel Practicals, MySQL 8 & Oracle Labs, and Tableau Suite.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+        <button class="btn btn-secondary btn-sm" id="btn-print-report">🖨️ Print BI Report</button>
+        <button class="btn btn-secondary btn-sm" id="btn-refresh-bi">↻ Refresh Telemetry</button>
+        <a href="/admin.html" class="btn btn-secondary btn-sm">← Operator Portal</a>
+      </div>
+    </div>
+
+    <!-- Syllabus Navigation Tabs -->
+    <div class="bi-nav-tabs" id="analytics-tabs">
+      <button class="bi-tab-btn active" data-tab="dashboard">📊 Main Dashboard</button>
+      <button class="bi-tab-btn" data-tab="overview">🔍 Unit 1: Analytics Overview (4 Types)</button>
+      <button class="bi-tab-btn" data-tab="distribution">📈 Unit 1: Distribution & Outliers</button>
+      <button class="bi-tab-btn" data-tab="excel">📗 Unit 1: Excel Practicals</button>
+      <button class="bi-tab-btn" data-tab="sql">🗄️ Unit 2: SQL Practical Lab</button>
+      <button class="bi-tab-btn" data-tab="tableau">📉 Unit 3: Tableau BI Resources</button>
+      <button class="bi-tab-btn" data-tab="reports">📥 Reports & Downloads</button>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 1: MAIN ANALYTICS DASHBOARD -->
+    <!-- ===================================================================== -->
+    <div class="bi-tab-pane active" id="pane-dashboard">
+      <!-- Filter Console (Date Range, Location, Vehicle Type) -->
+      <section class="filter-bar">
+        <!-- Date Presets -->
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.75rem;">
+          <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+            <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-right: 0.3rem;">Quick Presets:</span>
+            <button class="date-preset-btn active" data-preset="all">All-Time</button>
+            <button class="date-preset-btn" data-preset="today">Today</button>
+            <button class="date-preset-btn" data-preset="7d">Last 7 Days</button>
+            <button class="date-preset-btn" data-preset="30d">Last 30 Days</button>
+            <button class="date-preset-btn" data-preset="90d">Last 90 Days</button>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);" id="filter-active-summary">
+            Displaying: <strong>All Records (Live Database Aggregation)</strong>
+          </div>
+        </div>
+
+        <!-- Start Date -->
+        <div class="filter-item">
+          <label for="filter-start-date">Start Date</label>
+          <input type="date" id="filter-start-date" class="form-control" style="font-size: 0.85rem; padding: 0.5rem 0.75rem;">
+        </div>
+
+        <!-- End Date -->
+        <div class="filter-item">
+          <label for="filter-end-date">End Date</label>
+          <input type="date" id="filter-end-date" class="form-control" style="font-size: 0.85rem; padding: 0.5rem 0.75rem;">
+        </div>
+
+        <!-- Location Filter -->
+        <div class="filter-item">
+          <label for="filter-location">Parking Location</label>
+          <select id="filter-location" class="form-control" style="font-size: 0.85rem; padding: 0.5rem 0.75rem;">
+            <option value="all">All Facilities (Global)</option>
+          </select>
+        </div>
+
+        <!-- Vehicle Type Filter -->
+        <div class="filter-item">
+          <label for="filter-vehicle-type">Vehicle Category</label>
+          <select id="filter-vehicle-type" class="form-control" style="font-size: 0.85rem; padding: 0.5rem 0.75rem;">
+            <option value="all">All Vehicle Types</option>
+            <option value="car">Car (Standard)</option>
+            <option value="bike">Two-Wheeler / Bike</option>
+            <option value="ev">Electric Vehicle (EV)</option>
+            <option value="truck">Commercial / Truck</option>
+          </select>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+          <button class="btn btn-primary" id="btn-apply-filters" style="padding: 0.55rem 1.15rem; font-size: 0.85rem;">
+            Apply Filters
+          </button>
+          <button class="btn btn-secondary" id="btn-reset-filters" style="padding: 0.55rem 0.95rem; font-size: 0.85rem;">
+            Reset
+          </button>
+        </div>
+      </section>
+
+      <!-- 8 Real-Time Core BI KPI Metric Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div class="glass-card stat-card" style="padding: 1.1rem 1.25rem;">
+          <div class="stat-content">
+            <span class="stat-label">Total Reservations</span>
+            <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+              <span class="stat-value" id="kpi-total-bookings">--</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">(<span id="kpi-completed-bookings">--</span> completed)</span>
+            </div>
+            <span class="metric-sub">Across filtered time window</span>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card" style="padding: 1.1rem 1.25rem; border-color: rgba(6, 182, 212, 0.4);">
+          <div class="stat-content">
+            <span class="stat-label" style="color: var(--cyan);">Total Collected Revenue</span>
+            <span class="stat-value" style="color: var(--cyan);" id="kpi-total-revenue">₹--</span>
+            <span class="metric-sub">Confirmed & completed billing</span>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card" style="padding: 1.1rem 1.25rem; border-color: rgba(16, 185, 129, 0.4);">
+          <div class="stat-content">
+            <span class="stat-label" style="color: var(--primary);">Avg Rev / Completed Booking</span>
+            <span class="stat-value" style="color: var(--primary);" id="kpi-avg-rev">₹--</span>
+            <span class="metric-sub">Revenue per realized turnover</span>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card" style="padding: 1.1rem 1.25rem; border-color: rgba(245, 158, 11, 0.4);">
+          <div class="stat-content">
+            <span class="stat-label" style="color: var(--amber);">Cancellation Rate</span>
+            <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+              <span class="stat-value" style="color: var(--amber);" id="kpi-cancel-rate">--%</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">(No-show: <span id="kpi-noshow-rate">--%</span>)</span>
+            </div>
+            <span class="metric-sub">Cancelled vs total initiated</span>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card" style="padding: 1.1rem 1.25rem;">
+          <div class="stat-content">
+            <span class="stat-label">Average Parking Dwell</span>
+            <span class="stat-value" id="kpi-avg-duration">-- min</span>
+            <span class="metric-sub">Computed from actual gate sessions</span>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card" style="padding: 1.1rem 1.25rem;">
+          <div class="stat-content">
+            <span class="stat-label">Occupancy Utilization</span>
+            <span class="stat-value" id="kpi-occupancy-rate">--%</span>
+            <span class="metric-sub"><span id="kpi-occupied-bays">--</span> / <span id="kpi-total-bays">--</span> bays occupied</span>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card" style="padding: 1.1rem 1.25rem; border-color: rgba(139, 92, 246, 0.4);">
+          <div class="stat-content">
+            <span class="stat-label" style="color: #c084fc;">Live Active Sessions</span>
+            <span class="stat-value" style="color: #c084fc;" id="kpi-active-sessions">--</span>
+            <span class="metric-sub">Currently parked inside bays</span>
+          </div>
+        </div>
+
+        <div class="glass-card stat-card" style="padding: 1.1rem 1.25rem;">
+          <div class="stat-content">
+            <span class="stat-label">Data Quality Score</span>
+            <span class="stat-value" style="color: #10b981;" id="kpi-data-health">--%</span>
+            <span class="metric-sub">Audit health across records</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prescriptive Insights Notification Banner -->
+      <div class="glass-card" style="margin-bottom: 2rem; border-left: 4px solid var(--cyan); background: rgba(6, 182, 212, 0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.8rem;">
+          <div style="font-size: 1.8rem;">💡</div>
+          <div>
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--cyan);">Automated Business Optimization Alert</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);" id="top-prescriptive-alert">
+              Analyzing real-time capacity and tariff thresholds...
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-view-all-recs">View All Prescriptive Actions →</button>
+      </div>
+
+      <!-- Visual BI Analytics Grid (6 Charts) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+        <!-- Chart 1: Daily Revenue Trends -->
+        <div class="chart-container-card">
+          <div class="chart-header">
+            <div>
+              <h3>📈 Daily Revenue & Booking Volume Trend</h3>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Temporal revenue breakdown across active dates</span>
+            </div>
+            <span class="badge badge-available">Revenue + Volume</span>
+          </div>
+          <div style="position: relative; height: 260px;">
+            <canvas id="chart-daily-revenue"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Peak-Hour Ingress Demand (00:00 - 23:00) -->
+        <div class="chart-container-card">
+          <div class="chart-header">
+            <div>
+              <h3>⏰ 24-Hour Peak Ingress Demand Profile</h3>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Hourly booking start times (IST Timezone)</span>
+            </div>
+            <span class="badge" style="background: rgba(6, 182, 212, 0.2); color: var(--cyan);">Peak Ingress</span>
+          </div>
+          <div style="position: relative; height: 260px;">
+            <canvas id="chart-peak-hours"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 3: Weekday vs. Weekend Demand -->
+        <div class="chart-container-card">
+          <div class="chart-header">
+            <div>
+              <h3>📅 Weekday vs. Weekend Demand Analysis</h3>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Distribution of reservations & revenue across days of week</span>
+            </div>
+            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--amber);">Day-of-Week</span>
+          </div>
+          <div style="position: relative; height: 260px;">
+            <canvas id="chart-weekday-weekend"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 4: Location-Wise Revenue Breakdown -->
+        <div class="chart-container-card">
+          <div class="chart-header">
+            <div>
+              <h3>🏢 Location-Wise Revenue & Performance</h3>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Revenue generated per parking facility</span>
+            </div>
+            <span class="badge badge-surge">Facility Revenue</span>
+          </div>
+          <div style="position: relative; height: 260px;">
+            <canvas id="chart-locations"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 5: Vehicle-Type Revenue & Volume Breakdown -->
+        <div class="chart-container-card">
+          <div class="chart-header">
+            <div>
+              <h3>🚗 Vehicle-Type Revenue & Volume Split</h3>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Share of revenue: Car vs Two-Wheeler vs EV vs Truck</span>
+            </div>
+            <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c084fc;">Fleet Split</span>
+          </div>
+          <div style="position: relative; height: 260px;">
+            <canvas id="chart-vehicle-type"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 6: Booking Lifecycle Status Distribution -->
+        <div class="chart-container-card">
+          <div class="chart-header">
+            <div>
+              <h3>📊 Booking Lifecycle Status Distribution</h3>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Completed, active, cancelled, expired, and no-shows</span>
+            </div>
+            <span class="badge" style="background: rgba(255, 255, 255, 0.1);">Status Split</span>
+          </div>
+          <div style="position: relative; height: 260px;">
+            <canvas id="chart-status-dist"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outlier & Data Quality Audit Engine Card -->
+      <section class="glass-card" style="margin-bottom: 2.5rem; border-color: rgba(6, 182, 212, 0.4);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem;">
+              <span class="badge" style="background: rgba(6, 182, 212, 0.25); color: var(--cyan);">DATA AUDIT & INTEGRITY</span>
+              <span class="badge badge-available">Health: <span id="audit-health-pct">100%</span></span>
+            </div>
+            <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0;">Data Quality & Anomaly Scans</h2>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0.25rem 0 0 0;">
+              Automated scans for negative durations, sessions exceeding 24 hours, and fare spikes.
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 1rem; align-items: center; background: rgba(0,0,0,0.3); padding: 0.6rem 1rem; border-radius: var(--radius-md); font-size: 0.82rem;">
+            <div>Audited Records: <strong id="audit-total-records">--</strong></div>
+            <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1rem;">Anomalies Detected: <strong style="color: var(--amber);" id="audit-total-issues">0</strong></div>
+          </div>
+        </div>
+
+        <div style="max-height: 250px; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem;">
+            <thead style="position: sticky; top: 0; background: var(--bg-surface); z-index: 1;">
+              <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">
+                <th style="padding: 0.65rem;">Severity</th>
+                <th style="padding: 0.65rem;">Anomaly Code</th>
+                <th style="padding: 0.65rem;">Entity Model</th>
+                <th style="padding: 0.65rem;">Record Identifier</th>
+                <th style="padding: 0.65rem;">Audit Finding & Remediation</th>
+              </tr>
+            </thead>
+            <tbody id="audit-issues-tbody">
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+                  Running live database audit inspection...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 2: UNIT 1 — DATA ANALYTICS OVERVIEW (4 TYPES) -->
+    <!-- ===================================================================== -->
+    <div class="bi-tab-pane" id="pane-overview">
+      <div style="margin-bottom: 1.75rem;">
+        <span class="badge" style="background: rgba(6, 182, 212, 0.2); color: var(--cyan); font-weight: 800;">UNIT 1 SYLLABUS CORE</span>
+        <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0.3rem 0;">The 4 Types of Data Analytics in Smart Parking</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">
+          Comprehensive demonstration of Descriptive, Diagnostic, Predictive, and Prescriptive Analytics applied to parking operations.
+        </p>
+      </div>
+
+      <!-- 1. Descriptive Analytics -->
+      <section class="glass-card" style="margin-bottom: 2rem; border-color: rgba(6, 182, 212, 0.4);">
+        <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;">
+          <span style="font-size: 1.6rem;">📊</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--cyan);">A. Descriptive Analytics — What Happened?</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Historical facts, aggregate volume, revenue metrics, and fleet share.</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+          <div style="background: rgba(0,0,0,0.3); padding: 0.9rem 1.1rem; border-radius: var(--radius-md);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Reservations Logged</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #fff;" id="desc-total-bookings">--</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);"><span id="desc-completed-bookings">--</span> Completed Transactions</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.3); padding: 0.9rem 1.1rem; border-radius: var(--radius-md);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Gross Collected Revenue</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: var(--cyan);" id="desc-total-revenue">₹--</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Avg Transaction: ₹<span id="desc-avg-ticket">--</span></div>
+          </div>
+          <div style="background: rgba(0,0,0,0.3); padding: 0.9rem 1.1rem; border-radius: var(--radius-md);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Average Parking Duration</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: var(--primary);" id="desc-avg-duration">-- min</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Calculated from physical gate barriers</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.3); padding: 0.9rem 1.1rem; border-radius: var(--radius-md);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Top Performing Facility</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #c084fc;" id="desc-top-facility">--</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Revenue: ₹<span id="desc-top-facility-rev">--</span></div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem;">
+          <div style="background: rgba(0,0,0,0.25); padding: 1rem; border-radius: var(--radius-md);">
+            <h4 style="margin: 0 0 0.5rem 0; font-size: 0.92rem;">Vehicle Fleet Share & Average Spend</h4>
+            <div id="desc-fleet-container" style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.82rem;">
+              Loading fleet telemetry...
+            </div>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); padding: 1rem; border-radius: var(--radius-md);">
+            <h4 style="margin: 0 0 0.5rem 0; font-size: 0.92rem;">Operational Key Takeaway</h4>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+              Descriptive analytics shows steady utilization across four-wheeler commuter traffic, with Electric Vehicles producing the highest revenue per booking (₹169.17) due to integrated EV charging tariffs. Peak revenue occurs on weekdays between 9–11 AM and weekends at retail centers.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Diagnostic Analytics -->
+      <section class="glass-card" style="margin-bottom: 2rem; border-color: rgba(245, 158, 11, 0.4);">
+        <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;">
+          <span style="font-size: 1.6rem;">🔍</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--amber);">B. Diagnostic Analytics — Why Did It Happen?</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Root-cause comparisons, footfall variations, and attrition diagnostics (with cautionary observational notes).</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;" id="diagnostic-findings-container">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- 3. Predictive Analytics -->
+      <section class="glass-card" style="margin-bottom: 2rem; border-color: rgba(139, 92, 246, 0.4);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span style="font-size: 1.6rem;">🔮</span>
+            <div>
+              <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #c084fc;">C. Predictive Analytics — What Might Happen Next?</h3>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Explainable 7-day forward demand forecasting via Weighted Moving Average with seasonality.</span>
+            </div>
+          </div>
+          <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c084fc; font-weight: 700;">STATISTICAL ESTIMATE</span>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.25); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+          <strong>Prediction Methodology & Mathematical Model:</strong><br>
+          Uses a <strong>7-Day Weighted Moving Average (WMA)</strong> combined with Day-of-Week Seasonality factor:
+          <code>PredictedDemand(t) = [BaseAvg + TrendSlope × t] × SeasonalityFactor(DayOfWeek)</code>.<br>
+          <span style="color: var(--text-muted);">Limitations: This transparent statistical forecast models normal business continuity. It does not account for unmodeled extreme weather events, civic disruptions, or sudden tariff overhauls.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; align-items: center;">
+          <div style="position: relative; height: 260px;">
+            <canvas id="chart-predictive-forecast"></canvas>
+          </div>
+          <div style="max-height: 260px; overflow-y: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">
+                  <th style="padding: 0.5rem;">Date</th>
+                  <th style="padding: 0.5rem;">Day</th>
+                  <th style="padding: 0.5rem;">Est. Demand</th>
+                  <th style="padding: 0.5rem;">Est. Revenue</th>
+                  <th style="padding: 0.5rem;">95% Range</th>
+                </tr>
+              </thead>
+              <tbody id="predictive-table-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Prescriptive Analytics -->
+      <section class="glass-card" style="margin-bottom: 2rem; border-color: rgba(16, 185, 129, 0.4);">
+        <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;">
+          <span style="font-size: 1.6rem;">🎯</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--primary);">D. Prescriptive Analytics — What Should We Do Next?</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Transparent rule-based business recommendations displaying observed metrics, triggers, actions, and quantified benefits.</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;" id="prescriptive-recs-container">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 3: UNIT 1 — DATA DISTRIBUTION & OUTLIER IDENTIFICATION -->
+    <!-- ===================================================================== -->
+    <div class="bi-tab-pane" id="pane-distribution">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="badge" style="background: rgba(6, 182, 212, 0.2); color: var(--cyan); font-weight: 800;">STATISTICAL DATA AUDIT</span>
+          <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0.3rem 0;">Data Distribution & Tukey's IQR Outlier Analysis</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">
+            Central tendency metrics (Mean, Median, Mode), Frequency Histogram, Box Plot Summary, and Interquartile Range (IQR) fence outlier detection.
+          </p>
+        </div>
+
+        <!-- Metric Switcher -->
+        <div style="display: flex; gap: 0.5rem; background: rgba(0,0,0,0.3); padding: 0.3rem; border-radius: var(--radius-md);">
+          <button class="btn btn-sm btn-primary" id="btn-dist-metric-dur">Duration (Hours)</button>
+          <button class="btn btn-sm btn-secondary" id="btn-dist-metric-amt">Booking Amount (₹)</button>
+        </div>
+      </div>
+
+      <!-- Central Tendency & Dispersion Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+        <div class="glass-card stat-card" style="padding: 1rem;">
+          <span class="stat-label">Mean (Average)</span>
+          <span class="stat-value" id="dist-stat-mean">--</span>
+          <span class="metric-sub">Arithmetic average</span>
+        </div>
+        <div class="glass-card stat-card" style="padding: 1rem; border-color: rgba(6, 182, 212, 0.4);">
+          <span class="stat-label" style="color: var(--cyan);">Median (50th %ile)</span>
+          <span class="stat-value" style="color: var(--cyan);" id="dist-stat-median">--</span>
+          <span class="metric-sub">Robust central value</span>
+        </div>
+        <div class="glass-card stat-card" style="padding: 1rem;">
+          <span class="stat-label">Mode (Most Frequent)</span>
+          <span class="stat-value" id="dist-stat-mode">--</span>
+          <span class="metric-sub">Modal frequency</span>
+        </div>
+        <div class="glass-card stat-card" style="padding: 1rem;">
+          <span class="stat-label">Std Deviation (σ)</span>
+          <span class="stat-value" id="dist-stat-stddev">--</span>
+          <span class="metric-sub">Sample dispersion</span>
+        </div>
+        <div class="glass-card stat-card" style="padding: 1rem;">
+          <span class="stat-label">IQR (Q3 - Q1)</span>
+          <span class="stat-value" style="color: #c084fc;" id="dist-stat-iqr">--</span>
+          <span class="metric-sub">Interquartile range</span>
+        </div>
+        <div class="glass-card stat-card" style="padding: 1rem;">
+          <span class="stat-label">Tukey Upper Fence</span>
+          <span class="stat-value" style="color: var(--amber);" id="dist-stat-upper-fence">--</span>
+          <span class="metric-sub">Q3 + 1.5 × IQR</span>
+        </div>
+      </div>
+
+      <!-- Visual Distribution Grid: Histogram & Box Plot Summary -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- Histogram Card -->
+        <div class="chart-container-card">
+          <div class="chart-header">
+            <div>
+              <h3>📊 Frequency Distribution Histogram</h3>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Binned frequency showing skewness and concentration</span>
+            </div>
+            <span class="badge badge-available">Frequency</span>
+          </div>
+          <div style="position: relative; height: 260px;">
+            <canvas id="chart-distribution-histogram"></canvas>
+          </div>
+        </div>
+
+        <!-- Box Plot Summary Visual -->
+        <div class="chart-container-card">
+          <div class="chart-header">
+            <div>
+              <h3>📦 Five-Number Summary & Tukey Box Plot</h3>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Minimum, Q1, Median, Q3, Maximum & Outlier Bounds</span>
+            </div>
+            <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c084fc;">Quartiles</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; justify-content: center; height: 260px; gap: 0.8rem; padding: 0.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); text-align: center; gap: 0.5rem; font-size: 0.8rem;">
+              <div style="background: rgba(255,255,255,0.04); padding: 0.6rem; border-radius: 4px;">
+                <div style="color: var(--text-muted); font-size: 0.7rem;">MINIMUM</div>
+                <strong id="bp-min">--</strong>
+              </div>
+              <div style="background: rgba(6, 182, 212, 0.1); padding: 0.6rem; border-radius: 4px; border: 1px solid rgba(6,182,212,0.3);">
+                <div style="color: var(--cyan); font-size: 0.7rem;">Q1 (25%)</div>
+                <strong id="bp-q1">--</strong>
+              </div>
+              <div style="background: rgba(16, 185, 129, 0.1); padding: 0.6rem; border-radius: 4px; border: 1px solid rgba(16,185,129,0.3);">
+                <div style="color: var(--primary); font-size: 0.7rem;">MEDIAN (Q2)</div>
+                <strong id="bp-median">--</strong>
+              </div>
+              <div style="background: rgba(139, 92, 246, 0.1); padding: 0.6rem; border-radius: 4px; border: 1px solid rgba(139,92,246,0.3);">
+                <div style="color: #c084fc; font-size: 0.7rem;">Q3 (75%)</div>
+                <strong id="bp-q3">--</strong>
+              </div>
+              <div style="background: rgba(255,255,255,0.04); padding: 0.6rem; border-radius: 4px;">
+                <div style="color: var(--text-muted); font-size: 0.7rem;">MAXIMUM</div>
+                <strong id="bp-max">--</strong>
+              </div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+              <strong>Statistical Rule:</strong> Any data point satisfying <code>Value &gt; Q3 + 1.5 × IQR</code> or <code>Value &lt; Q1 - 1.5 × IQR</code> is flagged as an empirical outlier. Outliers represent legitimate operational events (e.g. multi-day travel or surge penalties) rather than automatic data corruption.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outlier Records Table -->
+      <section class="glass-card" style="border-color: rgba(245, 158, 11, 0.4);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800;">Tukey IQR Flagged Outlier Records</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">
+              Found <strong id="outliers-count-badge">0</strong> records outside statistical fences (<span id="outliers-pct-badge">0%</span> of dataset).
+            </span>
+          </div>
+
+          <div style="display: flex; gap: 0.6rem; align-items: center;">
+            <input type="text" id="input-outlier-search" placeholder="Search vehicle or ID..." class="form-control" style="font-size: 0.82rem; padding: 0.4rem 0.75rem; width: 220px;">
+            <button class="export-btn" id="btn-export-outliers-csv">⬇ Export Outliers CSV</button>
+          </div>
+        </div>
+
+        <div style="max-height: 350px; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem;">
+            <thead style="position: sticky; top: 0; background: var(--bg-surface); z-index: 1;">
+              <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">
+                <th style="padding: 0.65rem;">Severity</th>
+                <th style="padding: 0.65rem;">Record ID</th>
+                <th style="padding: 0.65rem;">Vehicle</th>
+                <th style="padding: 0.65rem;">Facility</th>
+                <th style="padding: 0.65rem;">Observed Value</th>
+                <th style="padding: 0.65rem;">Applicable Fence</th>
+                <th style="padding: 0.65rem;">Statistical Flag Reason</th>
+                <th style="padding: 0.65rem;">Business Interpretation</th>
+              </tr>
+            </thead>
+            <tbody id="outliers-tbody">
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+                  Calculating distribution and Tukey outliers...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 4: UNIT 1 — EXCEL PRACTICALS & SYLLABUS -->
+    <!-- ===================================================================== -->
+    <div class="bi-tab-pane" id="pane-excel">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: var(--primary); font-weight: 800;">UNIT 1 SYLLABUS PRACTICALS</span>
+          <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0.3rem 0;">Excel Basics to Advanced Syllabus Hub</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">
+            Spreadsheet operations, Logical (IF, Nested IF, AND/OR/NOT, IFERROR), Conditional Aggregations (SUMIFS, COUNTIFS, AVERAGEIFS), VLOOKUP/XLOOKUP, and Pivot Tables.
+          </p>
+        </div>
+
+        <a href="/api/admin/analytics/download/excel" class="btn btn-primary" id="btn-download-excel-master">
+          📗 Download Excel Workbook (.xlsx)
+        </a>
+      </div>
+
+      <!-- Excel Workbook Architecture Summary -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div class="glass-card" style="padding: 1.1rem; border-color: rgba(16, 185, 129, 0.4);">
+          <div style="font-weight: 800; color: var(--primary); margin-bottom: 0.3rem;">📗 1. Bookings_Data Sheet</div>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">500 verified smart parking transactions containing Duration, Base Amount, Surge, Total Amount, Status, and Vehicle Type.</p>
+        </div>
+        <div class="glass-card" style="padding: 1.1rem;">
+          <div style="font-weight: 800; color: var(--cyan); margin-bottom: 0.3rem;">📋 2. Formula_Practicals Sheet</div>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Rows populated with dynamic formulas for XLOOKUP, VLOOKUP, IF, Nested IF, compound AND/OR, IFERROR, and Outlier flags.</p>
+        </div>
+        <div class="glass-card" style="padding: 1.1rem;">
+          <div style="font-weight: 800; color: #c084fc; margin-bottom: 0.3rem;">📊 3. Summary_KPIs_Formulas Sheet</div>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Demonstrates COUNTIF, COUNTIFS, SUMIF, SUMIFS, AVERAGEIFS, MEAN, MEDIAN, MODE, STDEV.S, and QUARTILE.INC.</p>
+        </div>
+        <div class="glass-card" style="padding: 1.1rem;">
+          <div style="font-weight: 800; color: var(--amber); margin-bottom: 0.3rem;">🔄 4. Pivot_Guide_&_Scenarios Sheet</div>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Blueprint specifications for 4 enterprise pivot tables: facility revenue matrix, peak hourly ingress, attrition, and yield.</p>
+        </div>
+      </div>
+
+      <!-- Interactive Formula Explorer -->
+      <section class="glass-card" style="margin-bottom: 2rem;">
+        <div style="margin-bottom: 1.25rem;">
+          <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800;">Interactive Excel Syllabus Formula Explorer</h3>
+          <span style="font-size: 0.82rem; color: var(--text-muted);">Exact formulas embedded in <code>ParkPulse_Analytics_Practicals.xlsx</code> with explanations.</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">
+                <th style="padding: 0.75rem;">Syllabus Category</th>
+                <th style="padding: 0.75rem;">Business Objective</th>
+                <th style="padding: 0.75rem;">Active Excel Formula</th>
+                <th style="padding: 0.75rem;">Formula Explanation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 0.75rem;"><span class="badge" style="background: rgba(6,182,212,0.15); color: var(--cyan);">XLOOKUP</span></td>
+                <td style="padding: 0.75rem; font-weight: 600;">Customer Name Retrieval</td>
+                <td style="padding: 0.75rem;"><code>=XLOOKUP(Bookings_Data!B2, Customers!A:A, Customers!B:B, "Guest User")</code></td>
+                <td style="padding: 0.75rem; color: var(--text-secondary);">Searches User_ID in Customers sheet; returns Name with native fallback for missing users.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 0.75rem;"><span class="badge" style="background: rgba(6,182,212,0.15); color: var(--cyan);">VLOOKUP</span></td>
+                <td style="padding: 0.75rem; font-weight: 600;">Facility Name by Location ID</td>
+                <td style="padding: 0.75rem;"><code>=VLOOKUP(Bookings_Data!C2, Locations!A:C, 3, FALSE)</code></td>
+                <td style="padding: 0.75rem; color: var(--text-secondary);">Extracts column index 3 (Facility Name) matching exact Location_ID.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 0.75rem;"><span class="badge" style="background: rgba(16,185,129,0.15); color: var(--primary);">SINGLE IF</span></td>
+                <td style="padding: 0.75rem; font-weight: 600;">Settlement Classification</td>
+                <td style="padding: 0.75rem;"><code>=IF(Bookings_Data!O2="COMPLETED", "Settled & Verified", "Unsettled / Pending")</code></td>
+                <td style="padding: 0.75rem; color: var(--text-secondary);">Evaluates Status column; flags settled transactions vs pending sessions.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 0.75rem;"><span class="badge" style="background: rgba(16,185,129,0.15); color: var(--primary);">NESTED IF</span></td>
+                <td style="padding: 0.75rem; font-weight: 600;">Occupancy Tier Rating</td>
+                <td style="padding: 0.75rem;"><code>=IF(Bookings_Data!N2>250, "Tier 1 (Surge)", IF(Bookings_Data!N2>100, "Tier 2 (Standard)", "Tier 3 (Short-Stay)"))</code></td>
+                <td style="padding: 0.75rem; color: var(--text-secondary);">Cascading logical thresholds classifying revenue yield into Tier 1, Tier 2, or Tier 3.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 0.75rem;"><span class="badge" style="background: rgba(245,158,11,0.15); color: var(--amber);">AND + OR</span></td>
+                <td style="padding: 0.75rem; font-weight: 600;">High-Yield Asset Identification</td>
+                <td style="padding: 0.75rem;"><code>=IF(AND(Bookings_Data!N2>150, OR(Bookings_Data!F2="car", Bookings_Data!F2="ev")), "★ High-Yield Asset", "Standard Dwell")</code></td>
+                <td style="padding: 0.75rem; color: var(--text-secondary);">Compound condition verifying both revenue &gt; ₹150 AND vehicle is Car or EV.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 0.75rem;"><span class="badge" style="background: rgba(239,68,68,0.15); color: #ef4444;">IFERROR</span></td>
+                <td style="padding: 0.75rem; font-weight: 600;">Lookup Error Protection</td>
+                <td style="padding: 0.75rem;"><code>=IFERROR(VLOOKUP(Bookings_Data!C2, Locations!A:C, 3, FALSE), "Location Not Found")</code></td>
+                <td style="padding: 0.75rem; color: var(--text-secondary);">Traps #N/A errors from invalid foreign keys, returning clean user-friendly text.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 0.75rem;"><span class="badge" style="background: rgba(139,92,246,0.15); color: #c084fc;">SUMIFS</span></td>
+                <td style="padding: 0.75rem; font-weight: 600;">Multi-Condition Revenue Sum</td>
+                <td style="padding: 0.75rem;"><code>=SUMIFS(Bookings_Data!N:N, Bookings_Data!F:F, "car", Bookings_Data!O:O, "COMPLETED")</code></td>
+                <td style="padding: 0.75rem; color: var(--text-secondary);">Sums Total_Amount where Vehicle_Type is "car" AND Status is "COMPLETED".</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 0.75rem;"><span class="badge" style="background: rgba(139,92,246,0.15); color: #c084fc;">COUNTIFS</span></td>
+                <td style="padding: 0.75rem; font-weight: 600;">Cancelled Four-Wheelers</td>
+                <td style="padding: 0.75rem;"><code>=COUNTIFS(Bookings_Data!F:F, "car", Bookings_Data!O:O, "CANCELLED")</code></td>
+                <td style="padding: 0.75rem; color: var(--text-secondary);">Counts rows matching multiple criteria (Four-wheelers cancelled before entry).</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.75rem;"><span class="badge" style="background: rgba(245,158,11,0.15); color: var(--amber);">IQR OUTLIER</span></td>
+                <td style="padding: 0.75rem; font-weight: 600;">Statistical Outlier Flagging</td>
+                <td style="padding: 0.75rem;"><code>=IF(OR(Bookings_Data!I2>24, Bookings_Data!N2>1500), "🚨 STATISTICAL OUTLIER", "NORMAL")</code></td>
+                <td style="padding: 0.75rem; color: var(--text-secondary);">Flags duration &gt; 24h or fare &gt; ₹1,500 corresponding to Tukey Upper Fence.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Pivot Tables Guide Section -->
+      <section class="glass-card">
+        <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 800;">Pivot Tables & Grouping Construction Guide</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem;">
+          <div style="background: rgba(0,0,0,0.25); padding: 1rem; border-radius: var(--radius-md);">
+            <div style="font-weight: 700; color: var(--cyan); margin-bottom: 0.3rem;">Pivot 1: Facility Revenue Matrix</div>
+            <ul style="font-size: 0.8rem; color: var(--text-secondary); margin: 0; padding-left: 1.2rem; line-height: 1.6;">
+              <li><strong>Rows:</strong> <code>Location_ID</code> (or Facility Name)</li>
+              <li><strong>Columns:</strong> <code>Vehicle_Type</code></li>
+              <li><strong>Values:</strong> <code>Sum of Total_Amount</code> (Currency ₹)</li>
+              <li><strong>Filter:</strong> <code>Status = COMPLETED</code></li>
+            </ul>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); padding: 1rem; border-radius: var(--radius-md);">
+            <div style="font-weight: 700; color: var(--primary); margin-bottom: 0.3rem;">Pivot 2: Peak Ingress Heatmap (Grouped)</div>
+            <ul style="font-size: 0.8rem; color: var(--text-secondary); margin: 0; padding-left: 1.2rem; line-height: 1.6;">
+              <li><strong>Rows:</strong> <code>Start_Time</code> (Right click → <strong>Group By Hours</strong>)</li>
+              <li><strong>Columns:</strong> <code>Start_Time</code> (Group By <strong>Weekdays</strong>)</li>
+              <li><strong>Values:</strong> <code>Count of Booking_ID</code></li>
+              <li><strong>Insight:</strong> Highlights 9-11 AM and 5-8 PM peak density</li>
+            </ul>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); padding: 1rem; border-radius: var(--radius-md);">
+            <div style="font-weight: 700; color: #c084fc; margin-bottom: 0.3rem;">Pivot 3: Lifecycle Attrition & No-Shows</div>
+            <ul style="font-size: 0.8rem; color: var(--text-secondary); margin: 0; padding-left: 1.2rem; line-height: 1.6;">
+              <li><strong>Rows:</strong> <code>Location_ID</code></li>
+              <li><strong>Columns:</strong> <code>Status</code></li>
+              <li><strong>Values:</strong> <code>Count of Booking_ID</code> (% of Row Total)</li>
+              <li><strong>Insight:</strong> Measures cancellation rates per facility</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 5: UNIT 2 — SQL PRACTICAL LABORATORY -->
+    <!-- ===================================================================== -->
+    <div class="bi-tab-pane" id="pane-sql">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c084fc; font-weight: 800;">UNIT 2 SYLLABUS LABORATORY</span>
+          <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0.3rem 0;">SQL Practical Laboratory & Query Runner</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">
+            10 Structured Syllabus Experiments with dual <strong>MySQL 8.0</strong> and <strong>Oracle Database</strong> syntax, live reproducible outputs, and business takeaways.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <a href="/api/admin/analytics/download/sql-queries" class="btn btn-secondary btn-sm">⬇ MySQL Queries (.sql)</a>
+          <a href="/api/admin/analytics/download/sql-oracle" class="btn btn-secondary btn-sm">⬇ Oracle Queries (.sql)</a>
+          <a href="/api/admin/analytics/download/oracle-guide" class="btn btn-secondary btn-sm">📖 Oracle Guide (.md)</a>
+        </div>
+      </div>
+
+      <!-- SQL Dialect Switcher -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Dialect:</span>
+          <button class="btn btn-sm btn-primary" id="btn-dialect-mysql">🐬 MySQL 8.0</button>
+          <button class="btn btn-sm btn-secondary" id="btn-dialect-oracle">🔴 Oracle 19c/21c/23ai</button>
+        </div>
+
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+          Total Syllabus Experiments: <strong>10 Experiments</strong>
+        </div>
+      </div>
+
+      <!-- Experiments Accordion / List Container -->
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;" id="sql-experiments-container">
+        <!-- Populated by JS -->
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          Loading SQL Practical Laboratory experiments...
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 6: UNIT 3 — TABLEAU BI RESOURCES -->
+    <!-- ===================================================================== -->
+    <div class="bi-tab-pane" id="pane-tableau">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--amber); font-weight: 800;">UNIT 3 SYLLABUS PRIORITY</span>
+          <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0.3rem 0;">Tableau Business Intelligence Resources</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">
+            Clean Tableau CSV datasets, 3 Dashboard Blueprints, Calculated Fields, and Complete Step-by-Step 26-Topic Syllabus Guide.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <a href="/api/admin/analytics/download/tableau-syllabus" class="btn btn-primary btn-sm">📖 Tableau Master Syllabus Guide</a>
+          <a href="/api/admin/analytics/download/tableau-guide" class="btn btn-secondary btn-sm">📐 3 Dashboard Blueprints</a>
+          <a href="/api/admin/analytics/download/tableau-fields" class="btn btn-secondary btn-sm">📋 Calculated Fields</a>
+        </div>
+      </div>
+
+      <!-- Academic Notice Banner -->
+      <div class="glass-card" style="margin-bottom: 2rem; border-left: 4px solid var(--amber); background: rgba(245, 158, 11, 0.08); padding: 1rem 1.25rem;">
+        <div style="font-weight: 700; color: var(--amber); font-size: 0.92rem; margin-bottom: 0.25rem;">
+          ⚠️ Important Academic Notice on Tableau Deliverables
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+          The charts on this web application utilize <strong>Chart.js</strong> for live browser telemetry. In accordance with syllabus standards, <strong>Chart.js is not an embedded Tableau workbook</strong>. To complete your Tableau coursework, import the verified CSV datasets below into <strong>Tableau Desktop</strong> or <strong>Tableau Public</strong> and follow our step-by-step calculated field and layout guides.
+        </p>
+      </div>
+
+      <!-- 3 Recommended Tableau Dashboards Wireframe Section -->
+      <section style="margin-bottom: 2rem;">
+        <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 800;">3 Enterprise Dashboard Specifications (For Tableau Desktop)</h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
+          <!-- Dashboard 1 -->
+          <div class="glass-card" style="padding: 1.25rem; border-color: rgba(6, 182, 212, 0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <span class="badge" style="background: rgba(6,182,212,0.2); color: var(--cyan);">DASHBOARD 1</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">1366 × 768 px Fixed</span>
+            </div>
+            <h4 style="margin: 0 0 0.4rem 0; font-size: 1.1rem; font-weight: 800;">Executive Overview</h4>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.8rem;">
+              High-level operational health indicators, daily revenue trend, facility rankings, and lifecycle conversion rates.
+            </p>
+            <div style="background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.78rem; line-height: 1.6;">
+              <strong>Sheets Included:</strong><br>
+              • KPI Cards: Realized Revenue, Completed Volume, ATV<br>
+              • Viz 1: Daily Revenue Trend Line (7-Day Moving Avg)<br>
+              • Viz 2: Facility Revenue Ranking (Horizontal Bar)<br>
+              • Viz 3: Lifecycle Status Donut (Dual Axis)<br>
+              • Viz 4: Fleet Segment Treemap (Car, Bike, EV)
+            </div>
+          </div>
+
+          <!-- Dashboard 2 -->
+          <div class="glass-card" style="padding: 1.25rem; border-color: rgba(245, 158, 11, 0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <span class="badge" style="background: rgba(245,158,11,0.2); color: var(--amber);">DASHBOARD 2</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">1366 × 768 px Fixed</span>
+            </div>
+            <h4 style="margin: 0 0 0.4rem 0; font-size: 1.1rem; font-weight: 800;">Parking Demand & Capacity Analysis</h4>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.8rem;">
+              Spatial congestion bottlenecks, 24-hour ingress peak windows, and bay turnover efficiency.
+            </p>
+            <div style="background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.78rem; line-height: 1.6;">
+              <strong>Sheets Included:</strong><br>
+              • Viz 1: 24-Hour Peak Ingress Density Profile (Area)<br>
+              • Viz 2: Day-of-Week vs Hourly Heatmap (Matrix)<br>
+              • Viz 3: Bay Turnover Ratio by Facility (LOD Measure)<br>
+              • Viz 4: Dwell Duration Binned Histogram
+            </div>
+          </div>
+
+          <!-- Dashboard 3 -->
+          <div class="glass-card" style="padding: 1.25rem; border-color: rgba(139, 92, 246, 0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <span class="badge" style="background: rgba(139,92,246,0.2); color: #c084fc;">DASHBOARD 3</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">1366 × 768 px Fixed</span>
+            </div>
+            <h4 style="margin: 0 0 0.4rem 0; font-size: 1.1rem; font-weight: 800;">Revenue & Customer Loyalty Analysis</h4>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.8rem;">
+              Average spend per dwell hour, reward tier distribution, and high-value customer accounts.
+            </p>
+            <div style="background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.78rem; line-height: 1.6;">
+              <strong>Sheets Included:</strong><br>
+              • Viz 1: Customer Spend vs. Dwell Scatterplot (Trendline)<br>
+              • Viz 2: Vehicle Revenue Contribution with Subtotals<br>
+              • Viz 3: Top 15 Customer Accounts Leaderboard<br>
+              • Viz 4: Overstay Penalty Fee Root-Cause Breakdown
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tableau Datasets Instant Download Strip -->
+      <section class="glass-card">
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.15rem; font-weight: 800;">Ready-to-Use Tableau Datasets (Clean CSVs)</h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Connect these clean relational extracts directly via <strong>Tableau Text File Connection</strong>:
+        </p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <a href="/api/admin/analytics/download/dataset-bookings" class="export-btn">⬇ bookings.csv (500 records)</a>
+          <a href="/api/admin/analytics/download/dataset-customers" class="export-btn">⬇ customers.csv (100 users)</a>
+          <a href="/api/admin/analytics/download/dataset-locations" class="export-btn">⬇ parking_locations.csv</a>
+          <a href="/api/admin/analytics/download/dataset-sessions" class="export-btn">⬇ parking_sessions.csv</a>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 7: REPORTS & EXPORTS -->
+    <!-- ===================================================================== -->
+    <div class="bi-tab-pane" id="pane-reports">
+      <div style="margin-bottom: 1.5rem;">
+        <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: var(--primary); font-weight: 800;">DATA EXPORT CENTER</span>
+        <h2 style="font-size: 1.75rem; font-weight: 800; margin: 0.3rem 0;">Academic Reports & Relational Exports</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">
+          One-click downloads for filter-aware CSV extracts, Excel practical workbooks, SQL suites, and printable summary reports.
+        </p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- 1. Filter-Aware CSV Export -->
+        <div class="glass-card" style="padding: 1.25rem; border-color: rgba(6, 182, 212, 0.4);">
+          <div style="font-weight: 800; font-size: 1.1rem; color: var(--cyan); margin-bottom: 0.4rem;">
+            🔍 1. Filter-Aware Bookings Export
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Exports transactions that match your currently selected <strong>Date Range, Parking Facility, and Vehicle Category</strong> filters. Customer PII is fully sanitized.
+          </p>
+          <a href="/api/admin/analytics/export/csv/filtered" class="btn btn-primary" id="btn-export-filtered-csv" style="width: 100%; text-align: center;">
+            ⬇ Export Filtered Bookings CSV
+          </a>
+        </div>
+
+        <!-- 2. Master Excel Workbook -->
+        <div class="glass-card" style="padding: 1.25rem; border-color: rgba(16, 185, 129, 0.4);">
+          <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary); margin-bottom: 0.4rem;">
+            📗 2. Master Excel Practicals (.xlsx)
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Download the complete 6-sheet syllabus workbook containing 500 rows, working column formulas, conditional formatting, and pivot guides.
+          </p>
+          <a href="/api/admin/analytics/download/excel" class="btn btn-primary" style="width: 100%; text-align: center;">
+            ⬇ Download ParkPulse_Analytics_Practicals.xlsx
+          </a>
+        </div>
+
+        <!-- 3. Full Relational SQL Suite -->
+        <div class="glass-card" style="padding: 1.25rem; border-color: rgba(139, 92, 246, 0.4);">
+          <div style="font-weight: 800; font-size: 1.1rem; color: #c084fc; margin-bottom: 0.4rem;">
+            🗄️ 3. SQL Relational Scripts (MySQL & Oracle)
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Download normalized 3NF schemas and 10 tested syllabus queries for both MySQL 8.0 and Oracle Database.
+          </p>
+          <div style="display: flex; gap: 0.5rem;">
+            <a href="/api/admin/analytics/download/sql-queries" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center;">MySQL (.sql)</a>
+            <a href="/api/admin/analytics/download/sql-oracle" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center;">Oracle (.sql)</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Printable Report Preview / Trigger -->
+      <section class="glass-card" style="text-align: center; padding: 2.5rem 1.5rem;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🖨️</div>
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.35rem; font-weight: 800;">Print Business Intelligence Executive Report</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; max-width: 600px; margin: 0 auto 1.5rem auto;">
+          Generates a clean, print-optimized document formatted for college lab submissions, executive review, and PDF export via your browser's Print dialog.
+        </p>
+        <button class="btn btn-primary" id="btn-print-executive-report" style="padding: 0.75rem 2rem; font-size: 0.95rem;">
+          🖨️ Print / Save as PDF
+        </button>
+      </section>
+    </div>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1.5rem; color: var(--text-muted); font-size: 0.82rem; border-top: 1px solid var(--border-color);">
+    <div>ParkPulse Analytics — Smart Parking Business Intelligence Platform • MCA Coursework Aligned</div>
+    <div style="margin-top: 0.4rem;">Descriptive, Diagnostic, Predictive & Prescriptive Analytics • Excel Practicals • MySQL 8 & Oracle Labs • Tableau BI Suite</div>
+  </footer>
+
+  <script type="module">
+    import { initTheme } from '/js/utils.js';
+    import { renderNavAuth } from '/js/auth.js';
+    import { initSocketClient } from '/js/socket.js';
+    import { initAnalytics } from '/js/analytics.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTheme();
+      renderNavAuth();
+      initSocketClient();
+      await initAnalytics();
+    });
+  </script>
+</body>
+</html>

@@ -12,17 +12,20 @@ const bookingSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      required: true,
+      index: true
     },
     slotId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingSlot',
-      required: true
+      required: true,
+      index: true
     },
     locationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingLocation',
-      required: true
+      required: true,
+      index: true
     },
     vehicleId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -32,21 +35,24 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      uppercase: true
+      uppercase: true,
+      index: true
     },
     vehicleType: {
       type: String,
-      enum: ['car', 'bike', 'ev'],
+      enum: ['car', 'bike', 'ev', 'truck'],
       default: 'car'
     },
     startTime: {
       type: Date,
       required: true,
-      default: Date.now
+      default: Date.now,
+      index: true
     },
     expectedEndTime: {
       type: Date,
-      required: true
+      required: true,
+      index: true
     },
     durationHours: {
       type: Number,
@@ -88,13 +94,15 @@ const bookingSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['PENDING', 'CONFIRMED', 'ACTIVE', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'OVERSTAYED'],
-      default: 'CONFIRMED'
+      enum: ['PENDING', 'CONFIRMED', 'ACTIVE', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'OVERSTAYED', 'NO_SHOW'],
+      default: 'CONFIRMED',
+      index: true
     },
     paymentStatus: {
       type: String,
-      enum: ['pending', 'paid', 'refunded'],
-      default: 'paid'
+      enum: ['pending', 'paid', 'refunded', 'failed'],
+      default: 'paid',
+      index: true
     },
     checkInTime: {
       type: Date,
@@ -106,6 +114,28 @@ const bookingSchema = new mongoose.Schema(
     },
     qrCodeData: {
       type: String
+    },
+    isFutureBooking: {
+      type: Boolean,
+      default: false
+    },
+    checkInGracePeriodMinutes: {
+      type: Number,
+      default: 15
+    },
+    valetRequested: {
+      type: Boolean,
+      default: false
+    },
+    valetStatus: {
+      type: String,
+      enum: ['NONE', 'REQUESTED', 'ASSIGNED', 'PARKED', 'RETRIEVAL_REQUESTED', 'RETURNED'],
+      default: 'NONE'
+    },
+    valetAttendantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
     }
   },
   {
@@ -114,7 +144,8 @@ const bookingSchema = new mongoose.Schema(
 );
 
 bookingSchema.index({ userId: 1, createdAt: -1 });
-bookingSchema.index({ status: 1 });
 bookingSchema.index({ slotId: 1, status: 1 });
+bookingSchema.index({ locationId: 1, status: 1, createdAt: -1 });
+bookingSchema.index({ startTime: 1, expectedEndTime: 1, status: 1 });
 
 module.exports = mongoose.model('Booking', bookingSchema);

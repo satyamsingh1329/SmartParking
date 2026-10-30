@@ -11,7 +11,8 @@ const parkingSlotSchema = new mongoose.Schema(
     locationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingLocation',
-      required: true
+      required: true,
+      index: true
     },
     floor: {
       type: Number,
@@ -27,7 +28,7 @@ const parkingSlotSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['standard', 'ev', 'vip', 'accessible'],
+      enum: ['standard', 'ev', 'vip', 'accessible', 'emergency', 'staff'],
       default: 'standard'
     },
     vehicleType: {
@@ -37,8 +38,9 @@ const parkingSlotSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['available', 'reserved', 'occupied'],
-      default: 'available'
+      enum: ['available', 'reserved', 'occupied', 'maintenance', 'out_of_service'],
+      default: 'available',
+      index: true
     },
     sensorId: {
       type: String,
@@ -49,6 +51,22 @@ const parkingSlotSchema = new mongoose.Schema(
     distanceFromEntrance: {
       type: Number,
       default: 20 // meters
+    },
+    walkingDistance: {
+      type: Number,
+      default: 25 // meters
+    },
+    drivingDistance: {
+      type: Number,
+      default: 60 // meters
+    },
+    navigationDirections: {
+      type: String,
+      default: 'Follow main driveway to gate, turn right into assigned zone.'
+    },
+    lane: {
+      type: String,
+      default: 'L-1'
     },
     pricePerHour: {
       type: Number,
@@ -77,8 +95,14 @@ const parkingSlotSchema = new mongoose.Schema(
   }
 );
 
+// Virtual for facilityId backward compatibility
+parkingSlotSchema.virtual('facilityId').get(function () {
+  return this.locationId;
+});
+
 parkingSlotSchema.index({ locationId: 1, slotNumber: 1 }, { unique: true });
 parkingSlotSchema.index({ locationId: 1, floor: 1, zone: 1 });
-parkingSlotSchema.index({ status: 1 });
+parkingSlotSchema.index({ locationId: 1, status: 1 });
+parkingSlotSchema.index({ type: 1, status: 1 });
 
 module.exports = mongoose.model('ParkingSlot', parkingSlotSchema);

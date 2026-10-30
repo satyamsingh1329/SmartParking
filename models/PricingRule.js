@@ -17,29 +17,30 @@ const pricingRuleSchema = new mongoose.Schema(
     },
     durationTiers: [
       {
-        maxHours: { type: Number, default: 2 },
-        flatRate: { type: Number, default: 80 }
-      },
-      {
-        maxHours: { type: Number, default: 5 },
-        hourlyRate: { type: Number, default: 40 }
-      },
-      {
-        maxHours: { type: Number, default: 24 },
-        hourlyRate: { type: Number, default: 35 }
+        maxHours: { type: Number, required: true },
+        flatRate: { type: Number },
+        hourlyRate: { type: Number }
       }
     ],
     surgeThreshold: {
       type: Number,
-      default: 80 // occupancy percent triggering surge
+      default: 80 // occupancy percent triggering surge (e.g. 80%)
     },
     surgeMultiplier: {
       type: Number,
       default: 1.25 // 1.25x
     },
+    weekendMultiplier: {
+      type: Number,
+      default: 1.0 // 1.0 (standard) or e.g. 1.15
+    },
+    peakHourMultiplier: {
+      type: Number,
+      default: 1.0 // 1.0 or e.g. 1.20
+    },
     evSurcharge: {
       type: Number,
-      default: 30 // ₹30 flat surcharge
+      default: 30 // flat EV charge fee
     },
     convenienceFee: {
       type: Number,
@@ -48,6 +49,14 @@ const pricingRuleSchema = new mongoose.Schema(
     taxPercent: {
       type: Number,
       default: 18 // 18% GST
+    },
+    gracePeriodMinutes: {
+      type: Number,
+      default: 15 // check-in grace period
+    },
+    overstayHourlyRate: {
+      type: Number,
+      default: 50
     }
   },
   {

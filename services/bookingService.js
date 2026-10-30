@@ -31,12 +31,23 @@ class BookingService {
     startTime = new Date(),
     paymentMethod = 'mock_card',
     pointsToRedeem = 0,
+    valetRequested = false,
     io
   }) {
     // 1. Calculate price quote
     const slot = await ParkingSlot.findById(slotId);
     if (!slot) {
-      throw new Error('Slot does not exist');
+      const err = new Error('Slot does not exist');
+      err.statusCode = 404;
+      throw err;
+    }
+
+    // Role / Restriction validation for emergency, staff and VIP bays
+    const user = await User.findById(userId);
+    if (['emergency', 'staff'].includes(slot.type) && (!user || !['ADMIN', 'GATEKEEPER'].includes(user.role))) {
+      const err = new Error(`Slot ${slot.slotNumber} is restricted to emergency / authorized staff vehicles only.`);
+      err.statusCode = 403;
+      throw err;
     }
 
     const quote = await pricingService.calculateQuote({
@@ -50,18 +61,19 @@ class BookingService {
     // 2. Handle reward points discount if requested
     let discountAmount = 0;
     let redeemedPoints = 0;
-    const user = await User.findById(userId);
 
     if (pointsToRedeem > 0 && user && user.rewardPoints >= pointsToRedeem) {
-      // 100 points = ₹20 discount (ratio 0.2)
+      // 100 points = ₹20 discount
       discountAmount = Math.min(Math.floor((pointsToRedeem / 100) * 20), quote.totalAmount);
       redeemedPoints = Math.round((discountAmount / 20) * 100);
     }
 
-    const finalTotal = Math.max(0, quote.totalAmount - discountAmount);
+    const valetFee = valetRequested ? 50 : 0;
+    const finalTotal = Math.max(0, quote.totalAmount + valetFee - discountAmount);
     const bookingId = this.generateBookingId();
     const parsedStartTime = new Date(startTime);
     const expectedEndTime = new Date(parsedStartTime.getTime() + durationHours * 3600 * 1000);
+    const isFutureBooking = parsedStartTime.getTime() - Date.now() > 30 * 60 * 1000;
 
     // 3. ATOMIC SLOT RESERVATION
     // Must find slot with status === 'available' and atomically update to 'reserved'
@@ -71,7 +83,7 @@ class BookingService {
         status: 'reserved',
         reservedAt: new Date()
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!reservedSlot) {
@@ -87,6 +99,7 @@ class BookingService {
         slot: reservedSlot.slotNumber,
         floor: reservedSlot.floor,
         zone: reservedSlot.zone,
+        lane: reservedSlot.lane || 'L-1',
         vehicle: vehicleNumber.toUpperCase(),
         entry: parsedStartTime.toISOString(),
         exit: expectedEndTime.toISOString(),
@@ -125,14 +138,18 @@ class BookingService {
         totalAmount: finalTotal,
         status: 'CONFIRMED',
         paymentStatus: 'paid',
-        qrCodeData
+        qrCodeData,
+        isFutureBooking,
+        checkInGracePeriodMinutes: 15,
+        valetRequested,
+        valetStatus: valetRequested ? 'REQUESTED' : 'NONE'
       });
 
       // Update slot reference to current booking
       reservedSlot.currentBooking = booking._id;
       await reservedSlot.save();
 
-      // 6. Record Payment
+      // 6. Record Payment with mock environment transparency
       const paymentId = `PAY-${Math.floor(100000 + Math.random() * 900000)}`;
       await Payment.create({
         paymentId,
@@ -141,15 +158,17 @@ class BookingService {
         amount: finalTotal,
         status: 'completed',
         method: paymentMethod,
+        isMockPayment: true,
+        gatewayProvider: 'PARKPULSE_SANDBOX_GATEWAY',
         transactionDetails: {
           breakdown: quote,
+          valetFee,
           discountAmount,
           paidAt: new Date()
         }
       });
 
       // 7. Update User Rewards:
-      // Deduct redeemed points
       if (redeemedPoints > 0) {
         user.rewardPoints -= redeemedPoints;
         await RewardTransaction.create({
@@ -181,7 +200,7 @@ class BookingService {
       await notificationService.createNotification({
         userId,
         title: 'Booking Confirmed 🎉',
-        message: `Your slot ${reservedSlot.slotNumber} is confirmed! Pass ID: ${bookingId}. Check-in within 15 minutes.`,
+        message: `Your bay ${reservedSlot.slotNumber} is confirmed! Pass ID: ${bookingId}. Check-in within 15 minutes.`,
         type: 'booking_confirmed',
         metadata: { bookingId, slotNumber: reservedSlot.slotNumber },
         io
@@ -212,11 +231,23 @@ class BookingService {
           totalAmount: booking.totalAmount
         });
 
-        // Trigger stats recalculation broadcast
         this.broadcastUpdatedStats(io, reservedSlot.locationId);
       }
 
-      return booking;
+      return {
+        ...booking.toObject(),
+        navigation: {
+          slotNumber: reservedSlot.slotNumber,
+          floor: reservedSlot.floor,
+          zone: reservedSlot.zone,
+          lane: reservedSlot.lane || 'L-1',
+          walkingDistanceMeters: reservedSlot.walkingDistance || 25,
+          drivingDistanceMeters: reservedSlot.drivingDistance || 60,
+          directions:
+            reservedSlot.navigationDirections ||
+            `Drive to Floor ${reservedSlot.floor}, follow signs to Zone ${reservedSlot.zone}, bay ${reservedSlot.slotNumber}.`
+        }
+      };
     } catch (err) {
       // Rollback slot reservation if any subsequent step failed
       await ParkingSlot.findByIdAndUpdate(slotId, {
@@ -229,7 +260,7 @@ class BookingService {
   }
 
   /**
-   * Auto-release unclaimed reservations after 15 minutes (Section 27)
+   * Auto-release unclaimed reservations after grace period (15 minutes)
    */
   async releaseExpiredReservations(io) {
     try {
@@ -245,17 +276,15 @@ class BookingService {
       console.log(`[Auto-Release] Releasing ${expiredSlots.length} expired reservations...`);
 
       for (const slot of expiredSlots) {
-        // Update booking status to EXPIRED
         if (slot.currentBooking) {
           const booking = await Booking.findById(slot.currentBooking);
           if (booking && booking.status === 'CONFIRMED') {
-            booking.status = 'EXPIRED';
+            booking.status = 'NO_SHOW';
             await booking.save();
 
-            // Notify user
             await notificationService.createNotification({
               userId: booking.userId,
-              title: 'Reservation Expired ⚠️',
+              title: 'Reservation Expired (No-Show) ⚠️',
               message: `Your reservation for slot ${slot.slotNumber} (${booking.bookingId}) expired due to 15-min check-in window.`,
               type: 'slot_expired',
               metadata: { bookingId: booking.bookingId },

@@ -210,6 +210,17 @@ async function openReservationDrawer(slot) {
   document.getElementById('drawer-slot-distance').textContent = `${slot.distanceFromEntrance || 30} meters from gate`;
   document.getElementById('drawer-slot-rate').textContent = `₹${slot.pricePerHour} / hour`;
 
+  // Indoor Navigation Guidance (Phase 19)
+  const directionsEl = document.getElementById('drawer-nav-directions');
+  const walkingEl = document.getElementById('drawer-nav-walking');
+  const drivingEl = document.getElementById('drawer-nav-driving');
+  const laneEl = document.getElementById('drawer-nav-lane');
+
+  if (directionsEl) directionsEl.textContent = slot.navigationDirections || `Level ${slot.floor}, follow signs to Zone ${slot.zone}, bay ${slot.slotNumber}.`;
+  if (walkingEl) walkingEl.textContent = `${slot.walkingDistance || 25}m`;
+  if (drivingEl) drivingEl.textContent = `${slot.drivingDistance || 60}m`;
+  if (laneEl) laneEl.textContent = slot.lane || `Lane ${slot.zone}-1`;
+
   // Set default vehicle selection
   const vSelect = document.getElementById('drawer-vehicle-type');
   if (vSelect) {
@@ -367,7 +378,17 @@ function setupRecommendationModal() {
       document.getElementById('rec-floor-zone').textContent = `Floor ${rec.bestSlot.floor} • Zone ${rec.bestSlot.zone}`;
       document.getElementById('rec-distance').textContent = `${rec.distanceFromEntrance}m from entrance`;
       document.getElementById('rec-rate').textContent = `₹${rec.pricePerHour}/hr`;
-      document.getElementById('rec-reason').textContent = rec.whyRecommended;
+
+      const reasonsListEl = document.getElementById('rec-reasons-list');
+      if (reasonsListEl) {
+        reasonsListEl.innerHTML = '';
+        const reasons = rec.reasonsList && rec.reasonsList.length > 0 ? rec.reasonsList : [rec.whyRecommended];
+        reasons.forEach((r) => {
+          const li = document.createElement('li');
+          li.textContent = r;
+          reasonsListEl.appendChild(li);
+        });
+      }
 
       // Setup booking action for this recommended slot
       const reserveRecBtn = document.getElementById('rec-reserve-btn');

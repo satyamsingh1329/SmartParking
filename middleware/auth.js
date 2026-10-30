@@ -1,5 +1,6 @@
-const jwt = require('jsonwebtoken');
+const { verifyToken } = require('../config/jwt');
 const User = require('../models/User');
+const { authorize } = require('./roles');
 
 const protect = async (req, res, next) => {
   let token;
@@ -13,17 +14,19 @@ const protect = async (req, res, next) => {
   if (!token) {
     return res.status(401).json({
       success: false,
+      errorCode: 'AUTH_REQUIRED',
       message: 'Not authorized to access this route. Please log in.'
     });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'parkpulse_super_secret_jwt_key_2026_secured_production_token');
+    const decoded = verifyToken(token);
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user) {
       return res.status(401).json({
         success: false,
+        errorCode: 'USER_NOT_FOUND',
         message: 'The user belonging to this token no longer exists.'
       });
     }
@@ -33,6 +36,7 @@ const protect = async (req, res, next) => {
   } catch (error) {
     return res.status(401).json({
       success: false,
+      errorCode: 'INVALID_TOKEN',
       message: 'Invalid or expired token. Please log in again.'
     });
   }
@@ -47,7 +51,7 @@ const optionalAuth = async (req, res, next) => {
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'parkpulse_super_secret_jwt_key_2026_secured_production_token');
+      const decoded = verifyToken(token);
       req.user = await User.findById(decoded.id).select('-password');
     } catch (e) {
       // Ignore token failure in optional auth
@@ -56,4 +60,4 @@ const optionalAuth = async (req, res, next) => {
   next();
 };
 
-module.exports = { protect, optionalAuth };
+module.exports = { protect, authorize, optionalAuth };

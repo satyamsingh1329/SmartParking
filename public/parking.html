@@ -24,6 +24,7 @@
         <a href="/dashboard.html" class="nav-link">My Dashboard</a>
         <a href="/gatekeeper.html" class="nav-link">Gatekeeper</a>
         <a href="/admin.html" class="nav-link">Admin Console</a>
+        <a href="/analytics.html" class="nav-link" style="color: var(--cyan); font-weight: 700;">📊 Analytics BI</a>
       </div>
 
       <div class="nav-actions">
@@ -208,6 +209,19 @@
         </div>
       </div>
 
+      <!-- Indoor Navigation Info Box (Phase 19) -->
+      <div style="padding: 0.75rem 1rem; background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: var(--radius-sm); font-size: 0.82rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--cyan); font-weight: 700; margin-bottom: 0.25rem;">
+          <span>🗺️ Indoor Navigation Guidance:</span>
+        </div>
+        <div id="drawer-nav-directions" style="color: var(--text-secondary); margin-bottom: 0.4rem;">Follow main ramp to Floor 1, proceed to assigned lane.</div>
+        <div style="display: flex; gap: 1rem; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap;">
+          <span>🚶 Walking: <strong id="drawer-nav-walking" style="color: var(--text-primary);">25m</strong></span>
+          <span>🚗 Driving: <strong id="drawer-nav-driving" style="color: var(--text-primary);">60m</strong></span>
+          <span>🛣️ Lane: <strong id="drawer-nav-lane" style="color: var(--text-primary);">Lane A-1</strong></span>
+        </div>
+      </div>
+
       <!-- Vehicle Type Selection -->
       <div class="form-group">
         <label class="form-label">Vehicle Type</label>
@@ -251,41 +265,43 @@
     </div>
   </aside>
 
-  <!-- Smart Recommendation Modal -->
+  <!-- Smart Recommendation Modal (Phase 5 & 24) -->
   <div class="modal-overlay" id="recommendation-modal">
     <div class="modal-content" style="border: 1.5px solid var(--cyan); box-shadow: 0 0 25px var(--cyan-glow);">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <span style="font-size: 1.3rem;">⭐</span>
-          <h3 class="modal-title">AI Smart Slot Recommendation</h3>
+          <h3 class="modal-title">Intelligent Multi-Factor Recommendation</h3>
         </div>
         <button class="modal-close-btn" id="close-rec-modal">✕</button>
       </div>
 
       <div class="modal-body">
-        <div style="text-align: center; margin-bottom: 1.5rem;">
-          <div style="display: inline-block; padding: 0.5rem 1.25rem; background: rgba(6, 182, 212, 0.15); border: 1px solid var(--cyan); border-radius: var(--radius-full); margin-bottom: 0.75rem;">
-            <span style="font-size: 0.85rem; font-weight: 700; color: var(--cyan);">OPTIMAL MATCH SCORE:</span>
-            <span style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-left: 0.35rem;" id="rec-match-score">94%</span>
+        <div style="text-align: center; margin-bottom: 1.25rem;">
+          <div style="display: inline-block; padding: 0.4rem 1.15rem; background: rgba(6, 182, 212, 0.15); border: 1px solid var(--cyan); border-radius: var(--radius-full); margin-bottom: 0.6rem;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--cyan);">OPTIMAL MATCH SCORE:</span>
+            <span style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-left: 0.35rem;" id="rec-match-score">94%</span>
           </div>
-          <h2 style="font-size: 2.2rem; font-weight: 800; font-family: 'JetBrains Mono', monospace;" id="rec-slot-number">A-14</h2>
-          <p style="color: var(--text-secondary); font-size: 0.9rem;" id="rec-floor-zone">Floor 1 • Zone A</p>
+          <h2 style="font-size: 2.1rem; font-weight: 800; font-family: 'JetBrains Mono', monospace;" id="rec-slot-number">A-14</h2>
+          <p style="color: var(--text-secondary); font-size: 0.88rem;" id="rec-floor-zone">Floor 1 • Zone A</p>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: rgba(0,0,0,0.25); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: rgba(0,0,0,0.25); padding: 0.85rem 1rem; border-radius: var(--radius-md); margin-bottom: 1.1rem;">
           <div>
             <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Distance to Gate</span>
-            <div style="font-weight: 700; font-size: 1.05rem;" id="rec-distance">22m</div>
+            <div style="font-weight: 700; font-size: 1rem;" id="rec-distance">22m</div>
           </div>
           <div>
             <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Base Rate</span>
-            <div style="font-weight: 700; font-size: 1.05rem; color: var(--primary);" id="rec-rate">₹40/hr</div>
+            <div style="font-weight: 700; font-size: 1rem; color: var(--primary);" id="rec-rate">₹40/hr</div>
           </div>
         </div>
 
         <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--primary); border-radius: var(--radius-sm); margin-bottom: 1rem;">
-          <strong style="color: var(--primary); font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 0.25rem;">Why this slot was recommended:</strong>
-          <p style="font-size: 0.9rem; color: var(--text-secondary);" id="rec-reason">Closest compatible slot with low zone congestion and zero wait time.</p>
+          <strong style="color: var(--primary); font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 0.4rem;">Why this slot was selected:</strong>
+          <ul id="rec-reasons-list" style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+            <!-- Populated dynamically via JS -->
+          </ul>
         </div>
       </div>
 

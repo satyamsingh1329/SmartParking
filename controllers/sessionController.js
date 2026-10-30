@@ -17,7 +17,11 @@ exports.verifyBooking = async (req, res, next) => {
       .populate('userId', 'name email phone');
 
     if (!booking) {
-      return res.status(404).json({ success: false, message: 'Invalid Booking ID' });
+      return res.status(404).json({
+        success: false,
+        errorCode: 'BOOKING_NOT_FOUND',
+        message: 'Invalid or non-existent Booking ID'
+      });
     }
 
     res.status(200).json({
@@ -31,26 +35,51 @@ exports.verifyBooking = async (req, res, next) => {
 
 // @desc    Check-in vehicle (Start parking session)
 // @route   POST /api/sessions/check-in
-// @access  Private (Gatekeeper / Admin / User)
+// @access  Private (USER can check-in own; GATEKEEPER/ADMIN can check-in any)
 exports.checkIn = async (req, res, next) => {
   try {
     const { bookingId } = req.body;
     if (!bookingId) {
-      return res.status(400).json({ success: false, message: 'Booking ID is required for check-in' });
+      return res.status(400).json({
+        success: false,
+        errorCode: 'VALIDATION_ERROR',
+        message: 'Booking ID is required for check-in'
+      });
     }
 
     const booking = await Booking.findOne({ bookingId: bookingId.toUpperCase() });
     if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
+      return res.status(404).json({
+        success: false,
+        errorCode: 'BOOKING_NOT_FOUND',
+        message: 'Booking not found'
+      });
+    }
+
+    // Role & Ownership Authorization Check (Security Fix)
+    const isOwner = booking.userId.toString() === req.user.id;
+    const isStaff = ['ADMIN', 'GATEKEEPER'].includes(req.user.role);
+
+    if (!isOwner && !isStaff) {
+      return res.status(403).json({
+        success: false,
+        errorCode: 'FORBIDDEN',
+        message: 'Access denied. You can only check-in your own valid booking.'
+      });
     }
 
     if (booking.status === 'ACTIVE') {
-      return res.status(400).json({ success: false, message: 'Vehicle is already checked in' });
-    }
-
-    if (booking.status !== 'CONFIRMED') {
       return res.status(400).json({
         success: false,
+        errorCode: 'ALREADY_ACTIVE',
+        message: 'Vehicle is already checked in and session is active'
+      });
+    }
+
+    if (booking.status !== 'CONFIRMED' && booking.status !== 'PENDING') {
+      return res.status(400).json({
+        success: false,
+        errorCode: 'INVALID_STATUS',
         message: `Cannot check in. Booking status is '${booking.status}'`
       });
     }
@@ -111,7 +140,7 @@ exports.checkIn = async (req, res, next) => {
     await notificationService.createNotification({
       userId: booking.userId,
       title: 'Vehicle Parked 🚗',
-      message: `Checked in at slot ${slot?.slotNumber || 'reserved'}. Expected exit: ${booking.expectedEndTime.toLocaleTimeString()}`,
+      message: `Checked in at slot ${slot?.slotNumber || 'assigned'}. Expected exit: ${booking.expectedEndTime.toLocaleTimeString()}`,
       type: 'parking_started',
       metadata: { bookingId: booking.bookingId, slotNumber: slot?.slotNumber },
       io
@@ -132,7 +161,7 @@ exports.checkIn = async (req, res, next) => {
 
 // @desc    Check-out vehicle (End parking session & calculate final bill)
 // @route   PATCH /api/sessions/:id/check-out
-// @access  Private (Gatekeeper / Admin / User)
+// @access  Private (USER can check-out own; GATEKEEPER/ADMIN can check-out any)
 exports.checkOut = async (req, res, next) => {
   try {
     const isObjectId = req.params.id.match(/^[0-9a-fA-F]{24}$/);
@@ -149,7 +178,23 @@ exports.checkOut = async (req, res, next) => {
     }
 
     if (!session || session.status === 'COMPLETED') {
-      return res.status(404).json({ success: false, message: 'Active parking session not found' });
+      return res.status(404).json({
+        success: false,
+        errorCode: 'SESSION_NOT_FOUND',
+        message: 'Active parking session not found or already completed'
+      });
+    }
+
+    // Role & Ownership Authorization Check (Security Fix)
+    const isOwner = session.userId.toString() === req.user.id;
+    const isStaff = ['ADMIN', 'GATEKEEPER'].includes(req.user.role);
+
+    if (!isOwner && !isStaff) {
+      return res.status(403).json({
+        success: false,
+        errorCode: 'FORBIDDEN',
+        message: 'Access denied. You can only check-out your own active parking session.'
+      });
     }
 
     const booking = await Booking.findById(session.bookingId);

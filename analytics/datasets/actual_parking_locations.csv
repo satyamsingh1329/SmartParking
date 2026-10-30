@@ -1,0 +1,6 @@
+location_id,location_code,name,address,city,category,total_floors,total_capacity,base_rate_car,base_rate_bike,base_rate_ev,is_active,created_at
+6ac3eaf13a56eb1e4b917a10,CAMPUS,University Campus Central,"Academic Block 4, North Campus Ave",New Delhi,campus,3,0,30,15,45,true,2026-10-05T18:22:41.199Z
+6ac3eaf13a56eb1e4b917a11,MALL,Central City Mall & Multiplex,Sector 18 Commercial Hub,Noida,mall,4,0,40,20,55,true,2026-10-05T18:22:41.199Z
+6ac3eaf13a56eb1e4b917a12,TECHPARK,Cyber Heights Tech Park,Phase 2 Electronic City,Bengaluru,techpark,5,0,50,25,65,true,2026-10-05T18:22:41.200Z
+6ac3eaf13a56eb1e4b917a13,HOSPITAL,Apollo Metro Health City,Health City Ring Road,New Delhi,hospital,2,0,25,10,40,true,2026-10-05T18:22:41.200Z
+6ac3eaf13a56eb1e4b917a14,RAILWAY,Grand Central Railway Terminal,Platform 1 North Entry Plaza,New Delhi,metro,2,0,35,15,50,true,2026-10-05T18:22:41.200Z

@@ -1,0 +1,12 @@
+<svg width="240" height="60" viewBox="0 0 240 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="240" height="60" rx="10" fill="#0b0f19" />
+  <circle cx="32" cy="30" r="18" fill="url(#logoGrad)" />
+  <text x="32" y="38" font-family="system-ui, sans-serif" font-size="20" font-weight="900" fill="#ffffff" text-anchor="middle">P</text>
+  <text x="62" y="38" font-family="system-ui, sans-serif" font-size="22" font-weight="800" fill="#ffffff">Park<tspan fill="#06b6d4">Pulse</tspan></text>
+</svg>

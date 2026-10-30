@@ -4,25 +4,30 @@ const ParkingLocation = require('../models/ParkingLocation');
 
 class PricingService {
   /**
-   * Calculate live quote for a booking
-   * @param {Object} params - { locationId, slotId, vehicleType, durationHours, slotType }
+   * Calculate live quote for a booking strictly from database configuration
+   * @param {Object} params - { locationId, slotId, vehicleType, durationHours, slotType, startTime }
    */
-  async calculateQuote({ locationId, slotId, vehicleType = 'car', durationHours = 2, slotType }) {
+  async calculateQuote({ locationId, slotId, vehicleType = 'car', durationHours = 2, slotType, startTime = new Date() }) {
     durationHours = parseFloat(durationHours) || 1;
     if (durationHours <= 0) durationHours = 1;
 
-    // Fetch pricing rule or fallback to location defaults
+    // 1. Fetch Location & PricingRule from Database
+    let location = null;
     let pricingRule = null;
+
     if (locationId) {
       pricingRule = await PricingRule.findOne({ locationId });
-    }
-
-    let location = null;
-    if (locationId) {
       location = await ParkingLocation.findById(locationId);
+    } else if (slotId) {
+      const slot = await ParkingSlot.findById(slotId);
+      if (slot) {
+        locationId = slot.locationId;
+        pricingRule = await PricingRule.findOne({ locationId });
+        location = await ParkingLocation.findById(locationId);
+      }
     }
 
-    // Default base rates
+    // Default fallback rates only if DB record hasn't been created yet
     const baseRates = pricingRule?.baseRates || location?.baseRates || {
       car: 40,
       bike: 20,
@@ -31,8 +36,8 @@ class PricingService {
       accessible: 30
     };
 
-    // Determine hourly rate based on vehicle and slot type
-    let hourlyRate = baseRates[vehicleType] || 40;
+    // 2. Determine base hourly rate for vehicle & bay category
+    let hourlyRate = baseRates[vehicleType] !== undefined ? baseRates[vehicleType] : 40;
     if (slotType === 'ev' || vehicleType === 'ev') {
       hourlyRate = Math.max(hourlyRate, baseRates.ev || 50);
     } else if (slotType === 'vip') {
@@ -41,23 +46,56 @@ class PricingService {
       hourlyRate = Math.min(hourlyRate, baseRates.accessible || 30);
     }
 
-    // Tiered duration calculation
+    // 3. Dynamic Duration Tier Calculation from DB PricingRule
     let baseAmount = 0;
-    const durationTiers = pricingRule?.durationTiers || [
-      { maxHours: 2, flatRate: hourlyRate * 2 },
-      { maxHours: 5, hourlyRate: hourlyRate },
-      { maxHours: 24, hourlyRate: Math.round(hourlyRate * 0.9) }
-    ];
+    const tiers = pricingRule?.durationTiers && pricingRule.durationTiers.length > 0
+      ? [...pricingRule.durationTiers].sort((a, b) => a.maxHours - b.maxHours)
+      : [];
 
-    if (durationHours <= 2) {
-      baseAmount = Math.round(hourlyRate * durationHours);
-    } else if (durationHours <= 5) {
-      baseAmount = Math.round(hourlyRate * 2 + (durationHours - 2) * hourlyRate);
+    if (tiers.length > 0) {
+      let remaining = durationHours;
+      let prevMax = 0;
+
+      for (let i = 0; i < tiers.length; i++) {
+        const tier = tiers[i];
+        const span = tier.maxHours - prevMax;
+        if (remaining <= 0) break;
+
+        const hoursInSpan = Math.min(remaining, span);
+
+        // If tier specifies a flatRate and commuter duration fits within initial flat bracket
+        if (tier.flatRate !== undefined && prevMax === 0 && durationHours <= tier.maxHours) {
+          baseAmount += tier.flatRate;
+          remaining -= hoursInSpan;
+        } else {
+          const rateForTier = tier.hourlyRate !== undefined ? tier.hourlyRate : hourlyRate;
+          baseAmount += rateForTier * hoursInSpan;
+          remaining -= hoursInSpan;
+        }
+        prevMax = tier.maxHours;
+      }
+
+      // Any excess duration beyond the highest configured tier
+      if (remaining > 0) {
+        const lastTier = tiers[tiers.length - 1];
+        const topRate = lastTier.hourlyRate !== undefined ? lastTier.hourlyRate : hourlyRate;
+        baseAmount += remaining * topRate;
+      }
     } else {
-      baseAmount = Math.round(hourlyRate * 2 + 3 * hourlyRate + (durationHours - 5) * (hourlyRate * 0.85));
+      baseAmount = Math.round(hourlyRate * durationHours);
     }
 
-    // Live occupancy calculation for surge pricing
+    // 4. Weekend / Peak Multiplier check based on startTime
+    const bookingDate = new Date(startTime);
+    const dayOfWeek = bookingDate.getDay(); // 0 is Sunday, 6 is Saturday
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    let weekendMultiplier = 1.0;
+    if (isWeekend && pricingRule?.weekendMultiplier && pricingRule.weekendMultiplier > 1.0) {
+      weekendMultiplier = pricingRule.weekendMultiplier;
+      baseAmount = Math.round(baseAmount * weekendMultiplier);
+    }
+
+    // 5. Live Occupancy & Demand Surge Calculation from Database
     let occupancyPercent = 0;
     let isSurge = false;
     let surgeMultiplier = 1.0;
@@ -75,21 +113,21 @@ class PricingService {
         occupancyPercent = Math.round((occupiedOrReserved / totalSlots) * 100);
       }
 
-      const threshold = pricingRule?.surgeThreshold || 80;
+      const threshold = pricingRule?.surgeThreshold !== undefined ? pricingRule.surgeThreshold : 80;
       if (occupancyPercent >= threshold) {
         isSurge = true;
-        surgeMultiplier = pricingRule?.surgeMultiplier || 1.25;
+        surgeMultiplier = pricingRule?.surgeMultiplier !== undefined ? pricingRule.surgeMultiplier : 1.25;
         surgeAmount = Math.round(baseAmount * (surgeMultiplier - 1));
       }
     }
 
-    // EV Charging surcharge
+    // 6. EV Charging Surcharge from DB
     let evSurcharge = 0;
     if (vehicleType === 'ev' || slotType === 'ev') {
-      evSurcharge = pricingRule?.evSurcharge || 30;
+      evSurcharge = pricingRule?.evSurcharge !== undefined ? pricingRule.evSurcharge : 30;
     }
 
-    // Convenience fee & Tax
+    // 7. Convenience Fee & GST from DB
     const convenienceFee = pricingRule?.convenienceFee !== undefined ? pricingRule.convenienceFee : 10;
     const subtotal = baseAmount + surgeAmount + evSurcharge + convenienceFee;
     const taxPercent = pricingRule?.taxPercent !== undefined ? pricingRule.taxPercent : 18;
@@ -102,6 +140,8 @@ class PricingService {
       slotType: slotType || 'standard',
       hourlyRate,
       baseAmount,
+      isWeekend,
+      weekendMultiplier,
       isSurge,
       surgeMultiplier,
       surgeAmount,
@@ -110,7 +150,9 @@ class PricingService {
       taxPercent,
       tax,
       totalAmount,
-      occupancyPercent
+      occupancyPercent,
+      gracePeriodMinutes: pricingRule?.gracePeriodMinutes || 15,
+      overstayHourlyRate: pricingRule?.overstayHourlyRate || 50
     };
   }
 }

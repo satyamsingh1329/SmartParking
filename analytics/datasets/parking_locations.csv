@@ -1,0 +1,6 @@
+location_id,location_code,name,address,city,category,total_floors,total_capacity,base_rate_car,base_rate_bike,base_rate_ev,is_active,created_at
+LOC-101,CAMPUS,University Campus Central,"Academic Block 4, North Campus Ave",New Delhi,campus,3,120,40,20,50,true,2026-01-01T08:00:00Z
+LOC-102,MALL,Central City Mall & Multiplex,Sector 18 Commercial Hub,Noida,mall,4,250,50,25,60,true,2026-01-01T08:00:00Z
+LOC-103,TECHPARK,Cyber Heights Tech Park,"Plot 12, Electronic City Phase 1",Bengaluru,techpark,5,350,60,30,70,true,2026-01-01T08:00:00Z
+LOC-104,METRO,Connaught Metro Intermodal Hub,"Radial Road 3, Inner Circle",New Delhi,metro,2,180,35,15,45,true,2026-01-01T08:00:00Z
+LOC-105,HOSPITAL,Apollo Metro Care Hospital,"Health City Complex, Ring Road",Gurugram,hospital,3,150,30,10,40,true,2026-01-01T08:00:00Z

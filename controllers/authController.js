@@ -1,25 +1,41 @@
-const jwt = require('jsonwebtoken');
+const { signToken } = require('../config/jwt');
 const User = require('../models/User');
 const Vehicle = require('../models/Vehicle');
 const RewardTransaction = require('../models/RewardTransaction');
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'parkpulse_super_secret_jwt_key_2026_secured_production_token', {
-    expiresIn: '30d'
-  });
+  return signToken({ id });
 };
 
-// @desc    Register a new user
+// @desc    Register a new user (Public endpoint ALWAYS assigns role USER)
 // @route   POST /api/auth/register
 // @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password } = req.body;
 
     if (!name || !email || !phone || !password) {
       return res.status(400).json({
         success: false,
+        errorCode: 'VALIDATION_ERROR',
         message: 'Please provide all required fields (name, email, phone, password)'
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        errorCode: 'WEAK_PASSWORD',
+        message: 'Password must be at least 6 characters long'
+      });
+    }
+
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        errorCode: 'INVALID_EMAIL',
+        message: 'Please provide a valid email address'
       });
     }
 
@@ -27,19 +43,20 @@ exports.register = async (req, res, next) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
+        errorCode: 'EMAIL_ALREADY_EXISTS',
         message: 'An account with this email already exists'
       });
     }
 
-    // Default to USER unless explicitly permitted admin creation
-    const userRole = (role === 'ADMIN' || role === 'GATEKEEPER') ? role : 'USER';
-
+    // CRITICAL SECURITY ENFORCEMENT:
+    // Public registrations are ALWAYS assigned the 'USER' role.
+    // Client-supplied roles (e.g. role: 'ADMIN') are strictly rejected/ignored.
     const user = await User.create({
-      name,
-      email: email.toLowerCase(),
-      phone,
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      phone: phone.trim(),
       password,
-      role: userRole,
+      role: 'USER',
       rewardPoints: 50 // 50 Welcome bonus points!
     });
 
@@ -72,6 +89,62 @@ exports.register = async (req, res, next) => {
   }
 };
 
+// @desc    Admin-only staff creation (provision GATEKEEPER or ADMIN accounts)
+// @route   POST /api/auth/staff
+// @access  Private (ADMIN only)
+exports.createStaffAccount = async (req, res, next) => {
+  try {
+    const { name, email, phone, password, role } = req.body;
+
+    if (!name || !email || !phone || !password || !role) {
+      return res.status(400).json({
+        success: false,
+        errorCode: 'VALIDATION_ERROR',
+        message: 'Please provide name, email, phone, password, and role'
+      });
+    }
+
+    if (!['ADMIN', 'GATEKEEPER'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        errorCode: 'INVALID_ROLE',
+        message: 'Staff role must be either ADMIN or GATEKEEPER'
+      });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        errorCode: 'EMAIL_EXISTS',
+        message: 'An account with this email already exists'
+      });
+    }
+
+    const staff = await User.create({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      phone: phone.trim(),
+      password,
+      role
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Staff account (${role}) created successfully`,
+      user: {
+        id: staff._id,
+        name: staff.name,
+        email: staff.email,
+        phone: staff.phone,
+        role: staff.role
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
@@ -82,14 +155,16 @@ exports.login = async (req, res, next) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
+        errorCode: 'CREDENTIALS_MISSING',
         message: 'Please provide email and password'
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
     if (!user) {
       return res.status(401).json({
         success: false,
+        errorCode: 'INVALID_CREDENTIALS',
         message: 'Invalid email or password'
       });
     }
@@ -98,6 +173,7 @@ exports.login = async (req, res, next) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
+        errorCode: 'INVALID_CREDENTIALS',
         message: 'Invalid email or password'
       });
     }
@@ -152,8 +228,8 @@ exports.updateProfile = async (req, res, next) => {
     const { name, phone } = req.body;
     const user = await User.findById(req.user.id);
 
-    if (name) user.name = name;
-    if (phone) user.phone = phone;
+    if (name) user.name = name.trim();
+    if (phone) user.phone = phone.trim();
 
     await user.save();
 
@@ -184,9 +260,12 @@ exports.addVehicle = async (req, res, next) => {
     if (!vehicleNumber || !vehicleType) {
       return res.status(400).json({
         success: false,
+        errorCode: 'VEHICLE_DATA_MISSING',
         message: 'Vehicle number and vehicle type are required'
       });
     }
+
+    const cleanNumber = vehicleNumber.toUpperCase().replace(/\s+/g, '');
 
     // If marked primary, unset other primaries
     if (isPrimary) {
@@ -195,7 +274,7 @@ exports.addVehicle = async (req, res, next) => {
 
     const vehicle = await Vehicle.create({
       userId: req.user.id,
-      vehicleNumber: vehicleNumber.toUpperCase().trim(),
+      vehicleNumber: cleanNumber,
       vehicleType,
       model: model || '',
       isPrimary: Boolean(isPrimary)
@@ -226,14 +305,14 @@ exports.getVehicles = async (req, res, next) => {
   }
 };
 
-// @desc    Delete vehicle
+// @desc    Delete vehicle (with ownership check)
 // @route   DELETE /api/auth/vehicles/:id
 // @access  Private
 exports.deleteVehicle = async (req, res, next) => {
   try {
     const vehicle = await Vehicle.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
     if (!vehicle) {
-      return res.status(404).json({ success: false, message: 'Vehicle not found' });
+      return res.status(404).json({ success: false, errorCode: 'NOT_FOUND', message: 'Vehicle not found or not owned by you' });
     }
     res.status(200).json({ success: true, message: 'Vehicle removed successfully' });
   } catch (err) {

@@ -1,0 +1,97 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "ParkPulse Smart Parking & IoT Telemetry API",
+    "version": "2.0.0",
+    "description": "Production-grade API for Real-Time Smart Parking Automation, IoT Proximity Sensors, ANPR Gate Simulation, EV Charging Management, and ML Availability Forecasting."
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Active Host (Relative / Production)"
+    },
+    {
+      "url": "http://localhost:5000/api",
+      "description": "Local Development (Default)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "sensorKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-sensor-key"
+      }
+    }
+  },
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Public commuter registration (Strictly role: USER)",
+        "responses": { "201": { "description": "User created" }, "400": { "description": "Validation error" } }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Authenticate user credentials",
+        "responses": { "200": { "description": "JWT issued" }, "401": { "description": "Invalid credentials" } }
+      }
+    },
+    "/parking": {
+      "get": {
+        "summary": "List multi-location parking network facilities",
+        "responses": { "200": { "description": "Facilities list" } }
+      }
+    },
+    "/slots/recommend": {
+      "get": {
+        "summary": "Intelligent Multi-Factor Recommendation Engine",
+        "responses": { "200": { "description": "Optimal bay with matchScore and reasonsList" } }
+      }
+    },
+    "/bookings": {
+      "post": {
+        "security": [{ "bearerAuth": [] }],
+        "summary": "Create atomic booking permit",
+        "responses": { "201": { "description": "Booking confirmed" }, "409": { "description": "Slot reserved by another user" } }
+      }
+    },
+    "/sensors/event": {
+      "post": {
+        "security": [{ "sensorKeyAuth": [] }, { "bearerAuth": [] }],
+        "summary": "Process IoT sensor entry/exit telemetry",
+        "responses": { "200": { "description": "Event processed" }, "401": { "description": "Sensor auth required" } }
+      }
+    },
+    "/anpr/simulate": {
+      "post": {
+        "summary": "Simulate optical license plate recognition scan",
+        "responses": { "200": { "description": "Barrier access decision" } }
+      }
+    },
+    "/ev/stations": {
+      "get": {
+        "summary": "Get all EV fast-charging stations",
+        "responses": { "200": { "description": "EV stations list" } }
+      }
+    },
+    "/predictions/availability": {
+      "get": {
+        "summary": "Machine learning availability & peak demand forecasting",
+        "responses": { "200": { "description": "Forecast horizons and peak analysis" } }
+      }
+    },
+    "/admin/analytics": {
+      "get": {
+        "security": [{ "bearerAuth": [] }],
+        "summary": "MongoDB aggregation pipeline analytics and KPIs",
+        "responses": { "200": { "description": "Aggregated analytics data" } }
+      }
+    }
+  }
+}

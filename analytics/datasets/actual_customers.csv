@@ -1,0 +1,6 @@
+user_id,name,email,phone,role,reward_points,created_at
+6ac3eaf13a56eb1e4b9179f7,Sarah Connor (Admin),admin@parkpulse.com,+91 9876543210,ADMIN,0,2026-10-05T18:22:41.025Z
+6ac3eaf13a56eb1e4b917a03,John Miller (Gatekeeper),gatekeeper@parkpulse.com,+91 9876543211,GATEKEEPER,200,2026-10-05T18:22:41.086Z
+6ac3eaf13a56eb1e4b917a08,Alex Rivera,user@parkpulse.com,+91 9876543212,USER,69,2026-10-05T18:22:41.141Z
+6ac3eb6b9b3bb406dbc014f7,Attempted Admin,hacker_1791224683415@test.com,+91 9999999999,USER,50,2026-10-05T18:24:43.425Z
+6ac3ec079b3bb406dbc01589,Attempted Admin,hacker_1791224839694@test.com,+91 9999999999,USER,50,2026-10-05T18:27:19.697Z
